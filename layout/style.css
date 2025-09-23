@@ -22,7 +22,7 @@ body {
 header {
     background-color: #007bff;
     color: #fff;
-    padding: 1rem;
+    padding: 0.1rem;
     text-align: center;
 }
 
@@ -62,7 +62,7 @@ main {
     display: flex;
     gap: 10px;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 1px;
 }
 
 .controls select, .controls button {
@@ -85,7 +85,7 @@ main {
 
 .layout-container {
     border: 2px dashed #ccc;
-    min-height: 500px;
+    min-height: 700px;
     position: relative; /* For absolute positioning of PC items */
     background-color: #e9e9e9;
     border-radius: 8px;
