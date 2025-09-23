@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>좌석 배치도 관리자</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <h1>좌석 배치도 관리자</h1>
+        <div class="header-actions">
+            <a href="../ipmanager/index.html" class="header-btn">고객 관리 앱으로</a>
+        </div>
+    </header>
+
+            <main>
+                <div class="controls">
+                    <label for="department-select">부서 선택:</label>
+                    <select id="department-select"></select>
+                    <button id="save-layout-btn">레이아웃 저장</button>
+                </div>
+                <div class="layout-container" id="layout-container">
+                    <!-- PC elements will be rendered here -->
+                </div>
+            </main>
+    <script src="script.js"></script>
+</body>
+</html>
