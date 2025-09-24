@@ -43,7 +43,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const pcElement = document.createElement('div');
             pcElement.classList.add('pc-item');
             pcElement.dataset.id = customer.id;
-            pcElement.innerHTML = `<strong>${customer.name}</strong><br>${customer.ip}`;
+            const ipParts = customer.ip.split('.');
+            const lastIpDigit = ipParts.length > 0 ? ipParts[ipParts.length - 1] : customer.ip;
+            pcElement.innerHTML = `<strong>${customer.name}</strong><br>${lastIpDigit}`;
             pcElement.style.position = 'absolute'; // 드래그를 위해 absolute 포지셔닝
 
             // 저장된 위치가 있으면 적용
