@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const presetForm = document.getElementById('preset-form');
     const presetListEl = document.getElementById('preset-list');
     const backToListFromPresetsBtn = document.getElementById('back-to-list-from-presets-btn');
+    const customerCountSpan = document.getElementById('customer-count');
     const presetIdInput = document.getElementById('preset-id');
     const cancelPresetEditBtn = document.getElementById('cancel-preset-edit-btn');
     const presetFormSubmitBtn = presetForm.querySelector('button[type="submit"]');
@@ -59,13 +60,23 @@ document.addEventListener('DOMContentLoaded', () => {
             return nameMatch && deptMatch;
         });
 
-        customerListEl.innerHTML = '';
+        // Update the customer count
+        customerCountSpan.textContent = `(${filteredCustomers.length}명)`;
+
+        customerListEl.innerHTML = ''; // Clear the list before rendering
+
         if (filteredCustomers.length === 0) {
             customerListEl.innerHTML = '<li>표시할 고객 정보가 없습니다.</li>';
             return;
         }
+
         filteredCustomers.forEach(c => {
             const li = document.createElement('li');
+
+            let departmentDisplay = '';
+            if (c.department && c.department.trim() !== '') {
+                departmentDisplay = ` <small class="customer-department-display">(${c.department})</small>`;
+            }
 
             let allExtraInfoHtml = [];
 
@@ -96,11 +107,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // 모든 추가 정보를 <br>로 연결
             const extraInfoBlock = allExtraInfoHtml.length > 0 ? `<br>${allExtraInfoHtml.join('')}` : '';
-
-            let departmentDisplay = '';
-            if (c.department && c.department.trim() !== '') {
-                departmentDisplay = ` <small class="customer-department-display">(${c.department})</small>`;
-            }
 
             li.innerHTML = `<span><strong>${c.name}</strong>${departmentDisplay}<br><small>${c.ip}</small>${extraInfoBlock}</span>`;
             li.dataset.id = c.id;
