@@ -19,6 +19,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const presetForm = document.getElementById('preset-form');
     const presetListEl = document.getElementById('preset-list');
     const backToListFromPresetsBtn = document.getElementById('back-to-list-from-presets-btn');
+    const presetIdInput = document.getElementById('preset-id');
+    const cancelPresetEditBtn = document.getElementById('cancel-preset-edit-btn');
+    const presetFormSubmitBtn = presetForm.querySelector('button[type="submit"]');
 
     // --- 데이터 관리 ---
     let customers = JSON.parse(localStorage.getItem('customers')) || [];
@@ -63,7 +66,43 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         filteredCustomers.forEach(c => {
             const li = document.createElement('li');
-            li.innerHTML = `<span><strong>${c.name}</strong><br><small>${c.department || ''} / ${c.ip}</small></span>`;
+
+            let allExtraInfoHtml = [];
+
+            // 프린터 정보 생성 (프리셋 이름 및 IP 기준)
+            const printerDisplayHtmls = c.printers
+                .map(printer => {
+                    let displayString = '';
+                    if (printer.presetId) {
+                        const preset = printerPresets.find(p => p.id == printer.presetId);
+                        if (preset) {
+                            displayString = `${preset.name} (${preset.ip})`;
+                        }
+                    } else {
+                        // 수동으로 추가된 프린터: 모델명과 IP 표시
+                        if (printer.model || printer.ip) {
+                            displayString = `${printer.model || '프린터'} (${printer.ip || 'IP 없음'})`;
+                        }
+                    }
+                    return displayString ? `<small class="customer-list-extra">🖨️ ${displayString}</small>` : null;
+                })
+                .filter(Boolean);
+            allExtraInfoHtml = allExtraInfoHtml.concat(printerDisplayHtmls);
+
+            // 백업 특이사항 정보 생성
+            if (c.backupNotes && c.backupNotes.trim() !== '') {
+                allExtraInfoHtml.push(`<small class="customer-list-extra">📝 ${c.backupNotes}</small>`);
+            }
+
+            // 모든 추가 정보를 <br>로 연결
+            const extraInfoBlock = allExtraInfoHtml.length > 0 ? `<br>${allExtraInfoHtml.join('')}` : '';
+
+            let departmentDisplay = '';
+            if (c.department && c.department.trim() !== '') {
+                departmentDisplay = ` <small class="customer-department-display">(${c.department})</small>`;
+            }
+
+            li.innerHTML = `<span><strong>${c.name}</strong>${departmentDisplay}<br><small>${c.ip}</small>${extraInfoBlock}</span>`;
             li.dataset.id = c.id;
             customerListEl.appendChild(li);
         });
@@ -72,6 +111,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const populateDepartmentFilter = () => {
         const departments = ['', ...new Set(customers.map(c => c.department).filter(Boolean))];
         departmentFilter.innerHTML = departments.map(d => `<option value="${d}">${d || '전체 부서'}</option>`).join('');
+
+        // 저장된 필터 상태 로드
+        const savedDepartment = localStorage.getItem('selectedDepartment');
+        if (savedDepartment) {
+            departmentFilter.value = savedDepartment;
+        }
     };
 
     const renderDetails = (customer) => {
@@ -101,7 +146,10 @@ document.addEventListener('DOMContentLoaded', () => {
         printerPresets.forEach(p => {
             const li = document.createElement('li');
             li.innerHTML = `<span><strong>${p.name}</strong><br><small>${p.model} - ${p.ip}</small></span>
-                          <button class="btn-danger delete-preset-btn" data-id="${p.id}">삭제</button>`;
+                          <div>
+                            <button class="btn-secondary edit-preset-btn" data-id="${p.id}">수정</button>
+                            <button class="btn-danger delete-preset-btn" data-id="${p.id}">삭제</button>
+                          </div>`;
             li.dataset.id = p.id;
             presetListEl.appendChild(li);
         });
@@ -155,6 +203,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const addPrinterForm = (printer = {}, isNew = true) => {
         const item = document.createElement('div');
         item.classList.add('printer-item');
+        if (printer.id) { // 프리셋에서 추가된 경우 ID를 데이터 속성으로 저장
+            item.dataset.presetId = printer.id;
+        }
         item.innerHTML = `
             <div class="form-group"><input type="text" class="printer-model" placeholder="모델명" value="${printer.model || ''}"></div>
             <div class="form-group"><input type="text" class="printer-ip" placeholder="IP 주소" value="${printer.ip || ''}"></div>
@@ -177,29 +228,41 @@ document.addEventListener('DOMContentLoaded', () => {
     managePresetsBtn.addEventListener('click', () => { renderPresets(); showPage('presets'); });
     backToListFromPresetsBtn.addEventListener('click', () => showPage('list'));
     searchInput.addEventListener('input', renderCustomers);
-    departmentFilter.addEventListener('change', renderCustomers);
+    departmentFilter.addEventListener('change', () => {
+        localStorage.setItem('selectedDepartment', departmentFilter.value); // Save filter state
+        renderCustomers();
+    });
 
     customerForm.addEventListener('submit', (e) => {
         e.preventDefault();
         let newPresetsAdded = false;
-        const printers = Array.from(document.querySelectorAll('.printer-item')).map(item => {
-            const printerData = {
-                model: item.querySelector('.printer-model').value,
-                ip: item.querySelector('.printer-ip').value,
-                port: item.querySelector('.printer-port').value,
-            };
-            const saveAsPresetCb = item.querySelector('.save-as-preset-cb');
-            if (saveAsPresetCb && saveAsPresetCb.checked) {
-                const presetNameInput = item.querySelector('.preset-name-input');
-                if (presetNameInput && presetNameInput.value) {
-                    printerPresets.push({ ...printerData, id: Date.now(), name: presetNameInput.value });
-                    newPresetsAdded = true;
-                }
-            }
-            return printerData;
-        });
-
-        if(newPresetsAdded) savePresets();
+                const printers = Array.from(document.querySelectorAll('.printer-item')).map(item => {
+                    const printerData = {
+                        model: item.querySelector('.printer-model').value,
+                        ip: item.querySelector('.printer-ip').value,
+                        port: item.querySelector('.printer-port').value,
+                        presetId: item.dataset.presetId || null
+                    };
+                    const saveAsPresetCb = item.querySelector('.save-as-preset-cb');
+                    if (saveAsPresetCb && saveAsPresetCb.checked) {
+                        const presetNameInput = item.querySelector('.preset-name-input');
+                        if (presetNameInput && presetNameInput.value) {
+                            const newPresetId = Date.now(); // 새 프리셋 ID 생성
+                            const newPreset = {
+                                model: printerData.model,
+                                ip: printerData.ip,
+                                port: printerData.port,
+                                id: newPresetId,
+                                name: presetNameInput.value
+                            };
+                            printerPresets.push(newPreset);
+                            newPresetsAdded = true;
+                            // 생성된 프리셋 ID를 현재 프린터 데이터에 바로 연결
+                            printerData.presetId = newPresetId;
+                        }
+                    }
+                    return printerData;
+                });        if(newPresetsAdded) savePresets();
 
         const customerData = {
             id: customerIdInput.value ? parseInt(customerIdInput.value) : Date.now(),
@@ -259,28 +322,79 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    const resetPresetForm = () => {
+        presetForm.reset();
+        presetIdInput.value = '';
+        presetFormSubmitBtn.textContent = '프리셋 저장';
+        cancelPresetEditBtn.style.display = 'none';
+    }
+
     presetForm.addEventListener('submit', (e) => {
         e.preventDefault();
+        const presetId = presetIdInput.value;
         const presetData = {
-            id: Date.now(),
             name: document.getElementById('preset-name').value,
             model: document.getElementById('preset-model').value,
             ip: document.getElementById('preset-ip').value,
             port: document.getElementById('preset-port').value,
         };
-        printerPresets.push(presetData);
+
+        if (presetId) { // Update existing preset
+            const index = printerPresets.findIndex(p => p.id == presetId);
+            if (index > -1) {
+                printerPresets[index] = { ...printerPresets[index], ...presetData };
+
+                // --- 고객 정보 자동 업데이트 ---
+                let wasAnyCustomerModified = false;
+                customers.forEach(customer => {
+                    customer.printers.forEach(printer => {
+                        if (printer.presetId && printer.presetId == presetId) {
+                            printer.model = presetData.model;
+                            printer.ip = presetData.ip;
+                            printer.port = presetData.port;
+                            wasAnyCustomerModified = true;
+                        }
+                    });
+                });
+
+                if (wasAnyCustomerModified) {
+                    saveCustomers();
+                    alert('이 프리셋을 사용하는 고객들의 프린터 정보가 업데이트되었습니다.');
+                }
+            }
+        } else { // Add new preset
+            printerPresets.push({ ...presetData, id: Date.now() });
+        }
+
         savePresets();
         renderPresets();
-        presetForm.reset();
+        resetPresetForm();
     });
 
     presetListEl.addEventListener('click', (e) => {
+        const presetId = e.target.dataset.id;
         if (e.target.classList.contains('delete-preset-btn')) {
-            printerPresets = printerPresets.filter(p => p.id != e.target.dataset.id);
-            savePresets();
-            renderPresets();
+            if (confirm('정말로 이 프리셋을 삭제하시겠습니까?')) {
+                printerPresets = printerPresets.filter(p => p.id != presetId);
+                savePresets();
+                renderPresets();
+            }
+        } else if (e.target.classList.contains('edit-preset-btn')) {
+            const preset = printerPresets.find(p => p.id == presetId);
+            if (preset) {
+                presetIdInput.value = preset.id;
+                document.getElementById('preset-name').value = preset.name;
+                document.getElementById('preset-model').value = preset.model;
+                document.getElementById('preset-ip').value = preset.ip;
+                document.getElementById('preset-port').value = preset.port;
+                
+                presetFormSubmitBtn.textContent = '프리셋 수정';
+                cancelPresetEditBtn.style.display = 'inline-block';
+            }
         }
     });
+
+    cancelPresetEditBtn.addEventListener('click', resetPresetForm);
 
     addPrinterFromPresetBtn.addEventListener('click', () => {
         if (printerPresets.length === 0) {

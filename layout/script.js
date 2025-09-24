@@ -65,32 +65,51 @@ document.addEventListener('DOMContentLoaded', () => {
     const makeDraggable = (element) => {
         let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
 
-        const dragMouseDown = (e) => {
+        // Helper to get clientX/Y from mouse or touch event
+        const getClientCoords = (e) => {
+            if (e.touches) {
+                return { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY };
+            }
+            return { clientX: e.clientX, clientY: e.clientY };
+        };
+
+        const dragStart = (e) => {
             e = e || window.event;
-            e.preventDefault();
-            pos3 = e.clientX;
-            pos4 = e.clientY;
-            document.onmouseup = closeDragElement;
+            e.preventDefault(); // Prevent scrolling on touch devices
+            const coords = getClientCoords(e);
+            pos3 = coords.clientX;
+            pos4 = coords.clientY;
+
+            // Attach event listeners to the document for both mouse and touch
+            document.onmouseup = dragEnd;
             document.onmousemove = elementDrag;
+            document.ontouchend = dragEnd;
+            document.ontouchmove = elementDrag;
         };
 
         const elementDrag = (e) => {
             e = e || window.event;
-            e.preventDefault();
-            pos1 = pos3 - e.clientX;
-            pos2 = pos4 - e.clientY;
-            pos3 = e.clientX;
-            pos4 = e.clientY;
+            e.preventDefault(); // Prevent scrolling
+            const coords = getClientCoords(e);
+            pos1 = pos3 - coords.clientX;
+            pos2 = pos4 - coords.clientY;
+            pos3 = coords.clientX;
+            pos4 = coords.clientY;
             element.style.top = (element.offsetTop - pos2) + "px";
             element.style.left = (element.offsetLeft - pos1) + "px";
         };
 
-        const closeDragElement = () => {
+        const dragEnd = () => {
+            // Remove event listeners from the document
             document.onmouseup = null;
             document.onmousemove = null;
+            document.ontouchend = null;
+            document.ontouchmove = null;
         };
 
-        element.onmousedown = dragMouseDown;
+        // Attach initial event listeners to the element
+        element.onmousedown = dragStart;
+        element.ontouchstart = dragStart;
     };
 
     // --- 이벤트 리스너 ---

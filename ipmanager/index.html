@@ -9,9 +9,9 @@
 <body>
 
     <header>
-        <h1>고객 IP 관리자</h1>
-        <button id="manage-presets-btn" class="header-btn">프리셋 관리</button>
-    </header>
+            <h1>고객 IP 관리자</h1>
+            <a href="../layout/index.html" class="header-btn">좌석 배치도 관리</a>
+            <button id="manage-presets-btn" class="header-btn">프리셋 관리</button>    </header>
 
     <main>
         <div id="customer-list-container" class="page">
@@ -107,8 +107,10 @@
                     <label for="preset-port">포트</label>
                     <input type="text" id="preset-port">
                 </div>
+                <input type="hidden" id="preset-id">
                 <div class="form-actions">
                     <button type="submit" class="btn-primary">프리셋 저장</button>
+                    <button type="button" id="cancel-preset-edit-btn" class="btn-secondary" style="display: none;">취소</button>
                 </div>
             </form>
             <hr>

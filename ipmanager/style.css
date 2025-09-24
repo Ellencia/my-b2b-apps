@@ -38,6 +38,7 @@ header h1 {
     padding: 0.5rem 1rem;
     border-radius: 4px;
     cursor: pointer;
+    text-decoration: none;
 }
 
 main {
@@ -216,4 +217,18 @@ hr {
     border: none;
     border-top: 1px solid #eee;
     margin: 2rem 0;
+}
+
+.customer-list-extra {
+    color: #555;
+    font-size: 0.8em;
+    display: block;
+    margin-top: 0px;
+}
+
+.customer-list-extra {
+    color: #555;
+    font-size: 0.8em;
+    display: block;
+    margin-top: 1px;
 }
