@@ -223,8 +223,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         item.innerHTML = `
             <div class="form-group"><input type="text" class="printer-model" placeholder="모델명" value="${printer.model || ''}"></div>
-            <div class="form-group"><input type="text" class="printer-ip" placeholder="IP 주소" value="${printer.ip || ''}"></div>
-            <div class="form-group"><input type="text" class="printer-port" placeholder="포트" value="${printer.port || ''}"></div>
+            <div class="form-group"><input type="text" class="printer-ip" placeholder="IP 주소" value="${printer.ip || ''}" inputmode="numeric"></div>
+            <div class="form-group"><input type="text" class="printer-port" placeholder="포트" value="${printer.port || ''}" inputmode="numeric"></div>
             <button type="button" class="btn-danger remove-printer-btn">삭제</button>
             ${isNew ? 
             `<div class="preset-save-option">
