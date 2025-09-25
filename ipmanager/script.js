@@ -72,6 +72,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         filteredCustomers.forEach(c => {
             const li = document.createElement('li');
+            if (c.isError) {
+                li.classList.add('customer-list-error');
+            } else if (c.isPending) {
+                li.classList.add('customer-list-pending');
+            }
 
             let departmentDisplay = '';
             if (c.department && c.department.trim() !== '') {
@@ -87,13 +92,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (printer.presetId) {
                         const preset = printerPresets.find(p => p.id == printer.presetId);
                         if (preset) {
-                            displayString = `${preset.name} (${preset.ip})`;
+                            const portString = preset.port ? `:${preset.port}` : '';
+                            displayString = `${preset.name} (${preset.ip}${portString})`;
                         }
                     } else {
-                        // 수동으로 추가된 프린터: 모델명과 IP 표시
-                        if (printer.model || printer.ip) {
-                            displayString = `${printer.model || '프린터'} (${printer.ip || 'IP 없음'})`;
-                        }
+                        // Fallback for a presetId that doesn't match (e.g., deleted preset)
+                        const portString = printer.port ? `:${printer.port}` : '';
+                        displayString = `${printer.model || '프린터'} (${printer.ip || 'IP 없음'}${portString})`;
                     }
                     return displayString ? `<small class="customer-list-extra">🖨️ ${displayString}</small>` : null;
                 })
@@ -196,12 +201,16 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('dns1').value = customer.dns1;
             document.getElementById('dns2').value = customer.dns2;
             document.getElementById('backup-notes').value = customer.backupNotes;
+            document.getElementById('is-pending-update').checked = customer.isPending || false;
+            document.getElementById('is-error-state').checked = customer.isError || false;
             if (customer.printers) {
                 customer.printers.forEach(p => addPrinterForm(p, false));
             }
         } else {
             formTitle.textContent = '새 고객 추가';
             customerIdInput.value = '';
+            document.getElementById('is-pending-update').checked = false;
+            document.getElementById('is-error-state').checked = false;
         }
         showPage('form');
     };
@@ -274,6 +283,8 @@ document.addEventListener('DOMContentLoaded', () => {
             id: customerIdInput.value ? parseInt(customerIdInput.value) : Date.now(),
             name: document.getElementById('customer-name').value,
             department: document.getElementById('customer-department').value,
+            isPending: document.getElementById('is-pending-update').checked, // Save pending state
+            isError: document.getElementById('is-error-state').checked, // Save error state
             ip: document.getElementById('ip-address').value,
             subnet: document.getElementById('subnet-mask').value,
             gateway: document.getElementById('gateway').value,
@@ -423,4 +434,14 @@ document.addEventListener('DOMContentLoaded', () => {
     populateDepartmentFilter();
     renderCustomers();
     showPage('list');
+
+    // Check for URL hash to show a specific customer
+    const hash = window.location.hash;
+    if (hash && hash.startsWith('#customer-')) {
+        const customerId = hash.substring(10); // Length of '#customer-'
+        const customer = customers.find(c => c.id == customerId);
+        if (customer) {
+            renderDetails(customer);
+        }
+    }
 });

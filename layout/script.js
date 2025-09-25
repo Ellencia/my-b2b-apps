@@ -42,6 +42,11 @@ document.addEventListener('DOMContentLoaded', () => {
         departmentCustomers.forEach(customer => {
             const pcElement = document.createElement('div');
             pcElement.classList.add('pc-item');
+            if (customer.isError) {
+                pcElement.classList.add('pc-item-error');
+            } else if (customer.isPending) {
+                pcElement.classList.add('pc-item-pending');
+            }
             pcElement.dataset.id = customer.id;
             const ipParts = customer.ip.split('.');
             const lastIpDigit = ipParts.length > 0 ? ipParts[ipParts.length - 1] : customer.ip;
@@ -66,32 +71,31 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 드래그 기능 ---
     const makeDraggable = (element) => {
         let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+        let dragStartTime, startX, startY;
+        const clickThreshold = 5; // Max pixels moved to be considered a click
+        const timeThreshold = 200; // Max ms to be considered a click
 
-        // Helper to get clientX/Y from mouse or touch event
         const getClientCoords = (e) => {
-            if (e.touches) {
-                return { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY };
-            }
-            return { clientX: e.clientX, clientY: e.clientY };
+            return e.touches ? { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY } : { clientX: e.clientX, clientY: e.clientY };
         };
 
         const dragStart = (e) => {
-            e = e || window.event;
-            e.preventDefault(); // Prevent scrolling on touch devices
+            e.preventDefault();
             const coords = getClientCoords(e);
             pos3 = coords.clientX;
             pos4 = coords.clientY;
+            startX = pos3;
+            startY = pos4;
+            dragStartTime = Date.now();
 
-            // Attach event listeners to the document for both mouse and touch
-            document.onmouseup = dragEnd;
-            document.onmousemove = elementDrag;
-            document.ontouchend = dragEnd;
-            document.ontouchmove = elementDrag;
+            document.addEventListener('mousemove', elementDrag);
+            document.addEventListener('mouseup', dragEnd);
+            document.addEventListener('touchmove', elementDrag, { passive: false });
+            document.addEventListener('touchend', dragEnd);
         };
 
         const elementDrag = (e) => {
-            e = e || window.event;
-            e.preventDefault(); // Prevent scrolling
+            e.preventDefault();
             const coords = getClientCoords(e);
             pos1 = pos3 - coords.clientX;
             pos2 = pos4 - coords.clientY;
@@ -101,17 +105,24 @@ document.addEventListener('DOMContentLoaded', () => {
             element.style.left = (element.offsetLeft - pos1) + "px";
         };
 
-        const dragEnd = () => {
-            // Remove event listeners from the document
-            document.onmouseup = null;
-            document.onmousemove = null;
-            document.ontouchend = null;
-            document.ontouchmove = null;
+        const dragEnd = (e) => {
+            document.removeEventListener('mousemove', elementDrag);
+            document.removeEventListener('mouseup', dragEnd);
+            document.removeEventListener('touchmove', elementDrag);
+            document.removeEventListener('touchend', dragEnd);
+
+            const timeElapsed = Date.now() - dragStartTime;
+            const endCoords = e.changedTouches ? { clientX: e.changedTouches[0].clientX, clientY: e.changedTouches[0].clientY } : { clientX: e.clientX, clientY: e.clientY };
+            const distanceMoved = Math.sqrt(Math.pow(endCoords.clientX - startX, 2) + Math.pow(endCoords.clientY - startY, 2));
+
+            if (timeElapsed < timeThreshold && distanceMoved < clickThreshold) {
+                const customerId = element.dataset.id;
+                window.location.href = `../ipmanager/index.html#customer-${customerId}`;
+            }
         };
 
-        // Attach initial event listeners to the element
-        element.onmousedown = dragStart;
-        element.ontouchstart = dragStart;
+        element.addEventListener('mousedown', dragStart);
+        element.addEventListener('touchstart', dragStart, { passive: false });
     };
 
     // --- 이벤트 리스너 ---

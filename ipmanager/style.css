@@ -5,6 +5,7 @@
     --surface-color: #ffffff;
     --text-color: #212529;
     --danger-color: #dc3545;
+    --warning-color: #ffc107; /* 보류 상태를 위한 노란색 */
     --shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
@@ -111,13 +112,29 @@ main {
 }
 
 .form-group input,
-.form-group textarea {
+.form-group textarea,
+.form-group select {
     width: 100%;
     padding: 0.75rem;
     border: 1px solid #ced4da;
     border-radius: 4px;
     box-sizing: border-box;
     font-family: inherit;
+}
+
+.form-group-inline {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-group-inline input[type="checkbox"] {
+    width: auto;
+}
+
+.form-group-inline label {
+    margin-bottom: 0;
+    font-weight: normal;
 }
 
 .form-actions {
@@ -217,6 +234,14 @@ hr {
     border: none;
     border-top: 1px solid #eee;
     margin: 2rem 0;
+}
+
+.customer-list-pending {
+    border-left: 5px solid var(--warning-color);
+}
+
+.customer-list-error {
+    border-left: 5px solid var(--danger-color);
 }
 
 .customer-list-extra {

@@ -131,6 +131,14 @@ main {
     cursor: grabbing;
 }
 
+.pc-item-pending {
+    background-color: #ffc107; /* 보류 상태를 위한 노란색 */
+}
+
+.pc-item-error {
+    background-color: #dc3545; /* 불가 상태를 위한 붉은색 */
+}
+
 footer {
     background-color: #333;
     color: #fff;
