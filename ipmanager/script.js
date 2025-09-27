@@ -37,12 +37,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 데이터 관리 ---
     let customers = JSON.parse(localStorage.getItem(getKey('customers'))) || [];
-    let printerPresets = JSON.parse(localStorage.getItem('printerPresets')) || []; // Presets are global
+    let printerPresets = JSON.parse(localStorage.getItem(getKey('printerPresets'))) || [];
 
     const saveData = (key, data) => localStorage.setItem(getKey(key), JSON.stringify(data));
-    const saveGlobalData = (key, data) => localStorage.setItem(key, JSON.stringify(data));
     const saveCustomers = () => saveData('customers', customers);
-    const savePresets = () => saveGlobalData('printerPresets', printerPresets);
+    const savePresets = () => saveData('printerPresets', printerPresets);
 
     // --- 데이터 마이그레이션 ---
     const migrateData = () => {};

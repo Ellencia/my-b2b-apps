@@ -79,6 +79,7 @@ header h1 {
     text-align: left;
     cursor: pointer;
     font-size: 0.9rem;
+    font-weight: normal; /* 굵기 통일 */
 }
 
 .dropdown-item:hover {

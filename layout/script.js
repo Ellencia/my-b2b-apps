@@ -155,8 +155,18 @@ document.addEventListener('DOMContentLoaded', () => {
     loadCustomers();
     populateDepartmentSelect();
 
-    const saveImageBtn = document.getElementById('save-image-btn');
-    saveImageBtn.addEventListener('click', () => {
+    // --- Hamburger Menu Logic ---
+    const menuToggleBtn = document.getElementById('menu-toggle-btn');
+    const dropdownMenu = document.getElementById('dropdown-menu');
+    const saveImageBtnMenu = document.getElementById('save-image-btn-menu');
+    const changeProfileLink = document.getElementById('change-profile-link');
+
+    menuToggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdownMenu.classList.toggle('show');
+    });
+
+    saveImageBtnMenu.addEventListener('click', () => {
         if (!currentDepartment) {
             alert('부서를 먼저 선택해주세요.');
             return;
@@ -168,5 +178,20 @@ document.addEventListener('DOMContentLoaded', () => {
             link.download = `배치도_${currentDepartment}.png`;
             link.click();
         });
+        dropdownMenu.classList.remove('show');
+    });
+
+    changeProfileLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (confirm('현재 프로필을 로그아웃하고 프로필 선택 화면으로 이동하시겠습니까?')) {
+            localStorage.removeItem('currentProfile');
+            window.location.href = '../select_profile.html';
+        }
+    });
+
+    window.addEventListener('click', (e) => {
+        if (dropdownMenu && !dropdownMenu.contains(e.target) && !menuToggleBtn.contains(e.target)) {
+            dropdownMenu.classList.remove('show');
+        }
     });
 });

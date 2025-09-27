@@ -10,8 +10,12 @@
     <header>
         <h1>고객 현황 보고서</h1>
         <div class="header-actions">
-            <button id="export-csv-btn">내보내기</button>
-            <a href="../index.html" class="header-btn">포털</a>
+            <button id="menu-toggle-btn" class="header-btn">☰</button>
+            <div id="dropdown-menu" class="dropdown-menu">
+                <button id="export-csv-btn-menu" class="dropdown-item">내보내기</button>
+                <a href="../index.html" class="dropdown-item">포털로 돌아가기</a>
+                <a href="#" id="change-profile-link" class="dropdown-item">프로필 변경</a>
+            </div>
         </div>
     </header>
     <main id="report-container">
