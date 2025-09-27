@@ -27,8 +27,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const populateDepartmentSelect = () => {
         const departments = [...new Set(customers.map(c => c.department).filter(Boolean))];
         departmentSelect.innerHTML = departments.map(d => `<option value="${d}">${d}</option>`).join('');
+
+        const savedDepartment = localStorage.getItem('selectedLayoutDepartment');
+
         if (departments.length > 0) {
-            currentDepartment = departments[0];
+            if (savedDepartment && departments.includes(savedDepartment)) {
+                currentDepartment = savedDepartment;
+            } else {
+                currentDepartment = departments[0];
+            }
             departmentSelect.value = currentDepartment;
             renderLayout(currentDepartment);
         }
@@ -128,6 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 이벤트 리스너 ---
     departmentSelect.addEventListener('change', (e) => {
         currentDepartment = e.target.value;
+        localStorage.setItem('selectedLayoutDepartment', currentDepartment); // Save selection
         renderLayout(currentDepartment);
     });
 
@@ -146,4 +154,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 초기화 ---
     loadCustomers();
     populateDepartmentSelect();
+
+    // --- 이미지 저장 기능 ---
+    const saveImageBtn = document.getElementById('save-image-btn');
+    saveImageBtn.addEventListener('click', () => {
+        if (!currentDepartment) {
+            alert('부서를 먼저 선택해주세요.');
+            return;
+        }
+        html2canvas(layoutContainer).then(canvas => {
+            const image = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.href = image;
+            link.download = `배치도_${currentDepartment}.png`;
+            link.click();
+        });
+    });
 });
