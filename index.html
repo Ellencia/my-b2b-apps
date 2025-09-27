@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+    <script>
+        // 프로필이 선택되었는지 확인하고, 없으면 선택 페이지로 보냅니다.
+        if (!localStorage.getItem('currentProfile')) {
+            window.location.replace('select_profile.html');
+        }
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>B2B 앱 포털</title>
@@ -39,6 +45,23 @@
         .app-link:hover {
             background-color: #0056b3;
         }
+        .change-profile-btn {
+            display: block;
+            width: 100%;
+            margin-top: 25px;
+            padding: 10px 20px;
+            background-color: #6c757d; /* secondary color */
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            border: none;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .change-profile-btn:hover {
+            background-color: #5a6268;
+        }
     </style>
 </head>
 <body>
@@ -47,6 +70,16 @@
         <a href="./ipmanager/index.html" class="app-link">IP 관리 앱</a>
         <a href="./layout/index.html" class="app-link">좌석 배치도 관리 앱</a>
         <a href="./reporter/index.html" class="app-link">고객 현황 보고서</a>
+        <button id="change-profile-btn" class="change-profile-btn">프로필 변경</button>
     </div>
+
+    <script>
+        document.getElementById('change-profile-btn').addEventListener('click', () => {
+            if (confirm('현재 프로필을 로그아웃하고 프로필 선택 화면으로 이동하시겠습니까?')) {
+                localStorage.removeItem('currentProfile');
+                window.location.href = 'select_profile.html';
+            }
+        });
+    </script>
 </body>
 </html>

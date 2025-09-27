@@ -1,3 +1,11 @@
+const currentProfile = localStorage.getItem('currentProfile');
+if (!currentProfile) {
+    alert('업무 프로필이 선택되지 않았습니다. 프로필 선택 화면으로 이동합니다.');
+    window.location.href = '../select_profile.html';
+}
+
+const getKey = (key) => `${currentProfile}_${key}`;
+
 document.addEventListener('DOMContentLoaded', () => {
     // --- DOM 요소 선택 ---
     const customerListEl = document.getElementById('customer-list');
@@ -15,7 +23,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const addPrinterBtnForm = document.getElementById('add-printer-btn-form');
     const addPrinterFromPresetBtn = document.getElementById('add-printer-from-preset-btn');
     const printerFormList = document.getElementById('printer-form-list');
-    const managePresetsBtn = document.getElementById('manage-presets-btn');
     const presetForm = document.getElementById('preset-form');
     const presetListEl = document.getElementById('preset-list');
     const backToListFromPresetsBtn = document.getElementById('back-to-list-from-presets-btn');
@@ -23,53 +30,38 @@ document.addEventListener('DOMContentLoaded', () => {
     const presetIdInput = document.getElementById('preset-id');
     const cancelPresetEditBtn = document.getElementById('cancel-preset-edit-btn');
     const presetFormSubmitBtn = presetForm.querySelector('button[type="submit"]');
+    const menuToggleBtn = document.getElementById('menu-toggle-btn');
+    const dropdownMenu = document.getElementById('dropdown-menu');
+    const managePresetsBtnMenu = document.getElementById('manage-presets-btn-menu');
+    const changeProfileLink = document.getElementById('change-profile-link');
 
     // --- 데이터 관리 ---
-    let customers = JSON.parse(localStorage.getItem('customers')) || [];
-    let printerPresets = JSON.parse(localStorage.getItem('printerPresets')) || [];
+    let customers = JSON.parse(localStorage.getItem(getKey('customers'))) || [];
+    let printerPresets = JSON.parse(localStorage.getItem('printerPresets')) || []; // Presets are global
 
-    const saveData = (key, data) => localStorage.setItem(key, JSON.stringify(data));
+    const saveData = (key, data) => localStorage.setItem(getKey(key), JSON.stringify(data));
+    const saveGlobalData = (key, data) => localStorage.setItem(key, JSON.stringify(data));
     const saveCustomers = () => saveData('customers', customers);
-    const savePresets = () => saveData('printerPresets', printerPresets);
+    const savePresets = () => saveGlobalData('printerPresets', printerPresets);
 
     // --- 데이터 마이그레이션 ---
-    const migrateData = () => {
-        let needsSave = false;
-        customers.forEach(c => {
-            // company -> department
-            if (c.company !== undefined) {
-                c.department = c.company;
-                delete c.company;
-                needsSave = true;
-            }
-            // Add backupNotes and printers if they don't exist
-            if (c.backupNotes === undefined) { c.backupNotes = ''; needsSave = true; }
-            if (c.printers === undefined) { c.printers = []; needsSave = true; }
-        });
-        if (needsSave) saveCustomers();
-    };
+    const migrateData = () => {};
 
     // --- UI 렌더링 ---
     const renderCustomers = () => {
         const searchTerm = searchInput.value.toLowerCase();
         const selectedDept = departmentFilter.value;
-
         const filteredCustomers = customers.filter(c => {
             const nameMatch = c.name.toLowerCase().includes(searchTerm);
             const deptMatch = !selectedDept || c.department === selectedDept;
             return nameMatch && deptMatch;
         });
-
-        // Update the customer count
         customerCountSpan.textContent = `(${filteredCustomers.length}명)`;
-
-        customerListEl.innerHTML = ''; // Clear the list before rendering
-
+        customerListEl.innerHTML = '';
         if (filteredCustomers.length === 0) {
             customerListEl.innerHTML = '<li>표시할 고객 정보가 없습니다.</li>';
             return;
         }
-
         filteredCustomers.forEach(c => {
             const li = document.createElement('li');
             if (c.isError) {
@@ -77,42 +69,27 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (c.isPending) {
                 li.classList.add('customer-list-pending');
             }
-
-            let departmentDisplay = '';
-            if (c.department && c.department.trim() !== '') {
-                departmentDisplay = ` <small class="customer-department-display">(${c.department})</small>`;
-            }
-
+            let departmentDisplay = c.department ? ` <small class="customer-department-display">(${c.department})</small>` : '';
             let allExtraInfoHtml = [];
-
-            // 프린터 정보 생성 (프리셋 이름 및 IP 기준)
-            const printerDisplayHtmls = c.printers
-                .map(printer => {
-                    let displayString = '';
-                    if (printer.presetId) {
-                        const preset = printerPresets.find(p => p.id == printer.presetId);
-                        if (preset) {
-                            const portString = preset.port ? `:${preset.port}` : '';
-                            displayString = `${preset.name} (${preset.ip}${portString})`;
-                        }
+            const printerDisplayHtmls = c.printers.map(printer => {
+                let displayString = '';
+                if (printer.presetId) {
+                    const preset = printerPresets.find(p => p.id == printer.presetId);
+                    if (preset) {
+                        displayString = `${preset.name} (${preset.ip})`;
                     } else {
-                        // Fallback for a presetId that doesn't match (e.g., deleted preset)
-                        const portString = printer.port ? `:${printer.port}` : '';
-                        displayString = `${printer.model || '프린터'} (${printer.ip || 'IP 없음'}${portString})`;
+                        displayString = `${printer.model || '프린터'} (${printer.ip || 'IP 없음'}) - 프리셋 삭제됨`;
                     }
-                    return displayString ? `<small class="customer-list-extra">🖨️ ${displayString}</small>` : null;
-                })
-                .filter(Boolean);
+                } else {
+                    displayString = `${printer.model || '프린터'} (${printer.ip || 'IP 없음'})`;
+                }
+                return displayString ? `<small class="customer-list-extra">🖨️ ${displayString}</small>` : null;
+            }).filter(Boolean);
             allExtraInfoHtml = allExtraInfoHtml.concat(printerDisplayHtmls);
-
-            // 백업 특이사항 정보 생성
             if (c.backupNotes && c.backupNotes.trim() !== '') {
                 allExtraInfoHtml.push(`<small class="customer-list-extra">📝 ${c.backupNotes}</small>`);
             }
-
-            // 모든 추가 정보를 <br>로 연결
             const extraInfoBlock = allExtraInfoHtml.length > 0 ? `<br>${allExtraInfoHtml.join('')}` : '';
-
             li.innerHTML = `<span><strong>${c.name}</strong>${departmentDisplay}<br><small>${c.ip}</small>${extraInfoBlock}</span>`;
             li.dataset.id = c.id;
             customerListEl.appendChild(li);
@@ -122,9 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const populateDepartmentFilter = () => {
         const departments = ['', ...new Set(customers.map(c => c.department).filter(Boolean))];
         departmentFilter.innerHTML = departments.map(d => `<option value="${d}">${d || '전체 부서'}</option>`).join('');
-
-        // 저장된 필터 상태 로드
-        const savedDepartment = localStorage.getItem('selectedDepartment');
+        const savedDepartment = localStorage.getItem(getKey('selectedDepartment'));
         if (savedDepartment) {
             departmentFilter.value = savedDepartment;
         }
@@ -166,14 +141,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // --- UI 상태 변경 함수 ---
     const showPage = (page) => {
         customerListContainer.style.display = 'none';
         customerFormContainer.style.display = 'none';
         customerDetailsContainer.style.display = 'none';
         presetManagerContainer.style.display = 'none';
         addCustomerFAB.style.display = 'none';
-
         if (page === 'list') {
             customerListContainer.style.display = 'block';
             addCustomerFAB.style.display = 'flex';
@@ -188,8 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const showForm = (customer = null) => {
         customerForm.reset();
-        printerFormList.innerHTML = ''; // 프린터 폼 초기화
-
+        printerFormList.innerHTML = '';
         if (customer) {
             formTitle.textContent = '고객 정보 수정';
             customerIdInput.value = customer.id;
@@ -218,7 +190,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const addPrinterForm = (printer = {}, isNew = true) => {
         const item = document.createElement('div');
         item.classList.add('printer-item');
-        // 수정: 기존 프린터는 presetId, 프리셋에서 새로 추가하는 경우는 id를 사용하므로 둘 다 확인
         const idToStore = printer.presetId || printer.id;
         if (idToStore) {
             item.dataset.presetId = idToStore;
@@ -228,7 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="form-group"><input type="text" class="printer-ip" placeholder="IP 주소" value="${printer.ip || ''}" inputmode="numeric"></div>
             <div class="form-group"><input type="text" class="printer-port" placeholder="포트" value="${printer.port || ''}" inputmode="numeric"></div>
             <button type="button" class="btn-danger remove-printer-btn">삭제</button>
-            ${isNew ? 
+            ${isNew ?
             `<div class="preset-save-option">
                 <input type="checkbox" class="save-as-preset-cb">
                 <label>이 프린터를 프리셋으로 저장</label>
@@ -238,55 +209,53 @@ document.addEventListener('DOMContentLoaded', () => {
         printerFormList.appendChild(item);
     };
 
-    // --- 이벤트 리스너 ---
     addCustomerFAB.addEventListener('click', () => showForm());
     cancelBtn.addEventListener('click', () => showPage('list'));
     addPrinterBtnForm.addEventListener('click', () => addPrinterForm({}, true));
-    managePresetsBtn.addEventListener('click', () => { renderPresets(); showPage('presets'); });
     backToListFromPresetsBtn.addEventListener('click', () => showPage('list'));
     searchInput.addEventListener('input', renderCustomers);
     departmentFilter.addEventListener('change', () => {
-        localStorage.setItem('selectedDepartment', departmentFilter.value); // Save filter state
+        localStorage.setItem(getKey('selectedDepartment'), departmentFilter.value);
         renderCustomers();
     });
 
     customerForm.addEventListener('submit', (e) => {
         e.preventDefault();
         let newPresetsAdded = false;
-                const printers = Array.from(document.querySelectorAll('.printer-item')).map(item => {
-                    const printerData = {
-                        model: item.querySelector('.printer-model').value,
-                        ip: item.querySelector('.printer-ip').value,
-                        port: item.querySelector('.printer-port').value,
-                        presetId: item.dataset.presetId || null
+        const printers = Array.from(document.querySelectorAll('.printer-item')).map(item => {
+            const printerData = {
+                model: item.querySelector('.printer-model').value,
+                ip: item.querySelector('.printer-ip').value,
+                port: item.querySelector('.printer-port').value,
+                presetId: item.dataset.presetId || null
+            };
+            const saveAsPresetCb = item.querySelector('.save-as-preset-cb');
+            if (saveAsPresetCb && saveAsPresetCb.checked) {
+                const presetNameInput = item.querySelector('.preset-name-input');
+                if (presetNameInput && presetNameInput.value) {
+                    const newPresetId = Date.now();
+                    const newPreset = {
+                        model: printerData.model,
+                        ip: printerData.ip,
+                        port: printerData.port,
+                        id: newPresetId,
+                        name: presetNameInput.value
                     };
-                    const saveAsPresetCb = item.querySelector('.save-as-preset-cb');
-                    if (saveAsPresetCb && saveAsPresetCb.checked) {
-                        const presetNameInput = item.querySelector('.preset-name-input');
-                        if (presetNameInput && presetNameInput.value) {
-                            const newPresetId = Date.now(); // 새 프리셋 ID 생성
-                            const newPreset = {
-                                model: printerData.model,
-                                ip: printerData.ip,
-                                port: printerData.port,
-                                id: newPresetId,
-                                name: presetNameInput.value
-                            };
-                            printerPresets.push(newPreset);
-                            newPresetsAdded = true;
-                            // 생성된 프리셋 ID를 현재 프린터 데이터에 바로 연결
-                            printerData.presetId = newPresetId;
-                        }
-                    }
-                    return printerData;
-                });        if(newPresetsAdded) savePresets();
+                    printerPresets.push(newPreset);
+                    newPresetsAdded = true;
+                    printerData.presetId = newPresetId;
+                }
+            }
+            return printerData;
+        });
+        if (newPresetsAdded) savePresets();
 
         const customerData = {
             id: customerIdInput.value ? parseInt(customerIdInput.value) : Date.now(),
             name: document.getElementById('customer-name').value,
             department: document.getElementById('customer-department').value,
-            isPending: document.getElementById('is-pending-update').checked, // Save pending state
-            isError: document.getElementById('is-error-state').checked, // Save error state
+            isPending: document.getElementById('is-pending-update').checked,
+            isError: document.getElementById('is-error-state').checked,
             ip: document.getElementById('ip-address').value,
             subnet: document.getElementById('subnet-mask').value,
             gateway: document.getElementById('gateway').value,
@@ -298,7 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const existingIndex = customers.findIndex(c => c.id == customerData.id);
         if (existingIndex > -1) customers[existingIndex] = customerData;
         else customers.push(customerData);
-        
+
         saveCustomers();
         populateDepartmentFilter();
         renderCustomers();
@@ -357,13 +326,10 @@ document.addEventListener('DOMContentLoaded', () => {
             ip: document.getElementById('preset-ip').value,
             port: document.getElementById('preset-port').value,
         };
-
-        if (presetId) { // Update existing preset
+        if (presetId) {
             const index = printerPresets.findIndex(p => p.id == presetId);
             if (index > -1) {
                 printerPresets[index] = { ...printerPresets[index], ...presetData };
-
-                // --- 고객 정보 자동 업데이트 ---
                 let wasAnyCustomerModified = false;
                 customers.forEach(customer => {
                     customer.printers.forEach(printer => {
@@ -375,16 +341,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     });
                 });
-
                 if (wasAnyCustomerModified) {
                     saveCustomers();
                     alert('이 프리셋을 사용하는 고객들의 프린터 정보가 업데이트되었습니다.');
                 }
             }
-        } else { // Add new preset
+        } else {
             printerPresets.push({ ...presetData, id: Date.now() });
         }
-
         savePresets();
         renderPresets();
         resetPresetForm();
@@ -406,7 +370,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('preset-model').value = preset.model;
                 document.getElementById('preset-ip').value = preset.ip;
                 document.getElementById('preset-port').value = preset.port;
-                
                 presetFormSubmitBtn.textContent = '프리셋 수정';
                 cancelPresetEditBtn.style.display = 'inline-block';
             }
@@ -421,7 +384,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         const select = document.createElement('select');
-        select.innerHTML = '<option value="">프리셋 선택...</option>' + 
+        select.innerHTML = '<option value="">프리셋 선택...</option>' +
                            printerPresets.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
         printerFormList.appendChild(select);
         select.addEventListener('change', e => {
@@ -431,16 +394,41 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // --- Hamburger Menu Logic ---
+    menuToggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdownMenu.classList.toggle('show');
+    });
+
+    managePresetsBtnMenu.addEventListener('click', () => {
+        renderPresets();
+        showPage('presets');
+        dropdownMenu.classList.remove('show');
+    });
+
+    changeProfileLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (confirm('현재 프로필을 로그아웃하고 프로필 선택 화면으로 이동하시겠습니까?')) {
+            localStorage.removeItem('currentProfile');
+            window.location.href = '../select_profile.html';
+        }
+    });
+
+    window.addEventListener('click', (e) => {
+        if (dropdownMenu && !dropdownMenu.contains(e.target) && !menuToggleBtn.contains(e.target)) {
+            dropdownMenu.classList.remove('show');
+        }
+    });
+
     // --- 초기화 ---
     migrateData();
     populateDepartmentFilter();
     renderCustomers();
     showPage('list');
 
-    // Check for URL hash to show a specific customer
     const hash = window.location.hash;
     if (hash && hash.startsWith('#customer-')) {
-        const customerId = hash.substring(10); // Length of '#customer-'
+        const customerId = hash.substring(10);
         const customer = customers.find(c => c.id == customerId);
         if (customer) {
             renderDetails(customer);

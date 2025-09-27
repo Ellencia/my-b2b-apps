@@ -1,3 +1,12 @@
+const currentProfile = localStorage.getItem('currentProfile');
+if (!currentProfile) {
+    alert('업무 프로필이 선택되지 않았습니다. 프로필 선택 화면으로 이동합니다.');
+    window.location.href = '../select_profile.html';
+}
+
+// Helper to create profile-specific keys
+const getKey = (key) => `${currentProfile}_${key}`;
+
 document.addEventListener('DOMContentLoaded', () => {
     const departmentSelect = document.getElementById('department-select');
     const layoutContainer = document.getElementById('layout-container');
@@ -6,30 +15,26 @@ document.addEventListener('DOMContentLoaded', () => {
     let customers = [];
     let currentDepartment = '';
 
-    // --- 데이터 로드 및 저장 ---
     const loadCustomers = () => {
-        const storedCustomers = localStorage.getItem('customers');
+        const storedCustomers = localStorage.getItem(getKey('customers'));
         if (storedCustomers) {
             customers = JSON.parse(storedCustomers);
         }
     };
 
     const loadLayout = (department) => {
-        const storedLayout = localStorage.getItem(`layout_${department}`);
+        const storedLayout = localStorage.getItem(getKey(`layout_${department}`));
         return storedLayout ? JSON.parse(storedLayout) : {};
     };
 
     const saveLayout = (department, layoutData) => {
-        localStorage.setItem(`layout_${department}`, JSON.stringify(layoutData));
+        localStorage.setItem(getKey(`layout_${department}`), JSON.stringify(layoutData));
     };
 
-    // --- UI 렌더링 ---
     const populateDepartmentSelect = () => {
         const departments = [...new Set(customers.map(c => c.department).filter(Boolean))];
         departmentSelect.innerHTML = departments.map(d => `<option value="${d}">${d}</option>`).join('');
-
-        const savedDepartment = localStorage.getItem('selectedLayoutDepartment');
-
+        const savedDepartment = localStorage.getItem(getKey('selectedLayoutDepartment'));
         if (departments.length > 0) {
             if (savedDepartment && departments.includes(savedDepartment)) {
                 currentDepartment = savedDepartment;
@@ -58,16 +63,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const ipParts = customer.ip.split('.');
             const lastIpDigit = ipParts.length > 0 ? ipParts[ipParts.length - 1] : customer.ip;
             pcElement.innerHTML = `<strong>${customer.name}</strong><br>${lastIpDigit}`;
-            pcElement.style.position = 'absolute'; // 드래그를 위해 absolute 포지셔닝
+            pcElement.style.position = 'absolute';
 
-            // 저장된 위치가 있으면 적용
             if (savedPositions[customer.id]) {
                 pcElement.style.left = savedPositions[customer.id].left;
                 pcElement.style.top = savedPositions[customer.id].top;
             } else {
-                // 저장된 위치가 없으면 기본 위치 설정 (예: 무작위 또는 그리드)
-                pcElement.style.left = `${Math.random() * (layoutContainer.offsetWidth - 100)}px`; // 임시
-                pcElement.style.top = `${Math.random() * (layoutContainer.offsetHeight - 50)}px`; // 임시
+                pcElement.style.left = `${Math.random() * (layoutContainer.offsetWidth - 100)}px`;
+                pcElement.style.top = `${Math.random() * (layoutContainer.offsetHeight - 50)}px`;
             }
 
             makeDraggable(pcElement);
@@ -75,12 +78,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // --- 드래그 기능 ---
     const makeDraggable = (element) => {
         let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
         let dragStartTime, startX, startY;
-        const clickThreshold = 5; // Max pixels moved to be considered a click
-        const timeThreshold = 200; // Max ms to be considered a click
+        const clickThreshold = 5;
+        const timeThreshold = 200;
 
         const getClientCoords = (e) => {
             return e.touches ? { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY } : { clientX: e.clientX, clientY: e.clientY };
@@ -132,10 +134,9 @@ document.addEventListener('DOMContentLoaded', () => {
         element.addEventListener('touchstart', dragStart, { passive: false });
     };
 
-    // --- 이벤트 리스너 ---
     departmentSelect.addEventListener('change', (e) => {
         currentDepartment = e.target.value;
-        localStorage.setItem('selectedLayoutDepartment', currentDepartment); // Save selection
+        localStorage.setItem(getKey('selectedLayoutDepartment'), currentDepartment);
         renderLayout(currentDepartment);
     });
 
@@ -151,11 +152,9 @@ document.addEventListener('DOMContentLoaded', () => {
         alert('레이아웃이 저장되었습니다!');
     });
 
-    // --- 초기화 ---
     loadCustomers();
     populateDepartmentSelect();
 
-    // --- 이미지 저장 기능 ---
     const saveImageBtn = document.getElementById('save-image-btn');
     saveImageBtn.addEventListener('click', () => {
         if (!currentDepartment) {

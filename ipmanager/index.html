@@ -11,8 +11,12 @@
     <header>
             <h1>고객 IP 관리자</h1>
             <div class="header-actions">
-                <a href="../layout/index.html" class="header-btn">좌석 배치 관리</a>
-                <button id="manage-presets-btn" class="header-btn">프리셋 관리</button>
+                <button id="menu-toggle-btn" class="header-btn">☰</button>
+                <div id="dropdown-menu" class="dropdown-menu">
+                    <a href="../layout/index.html" class="dropdown-item">좌석 배치도 관리</a>
+                    <button id="manage-presets-btn-menu" class="dropdown-item">프린터 프리셋 관리</button>
+                    <a href="../select_profile.html" id="change-profile-link" class="dropdown-item">프로필 변경</a>
+                </div>
             </div>
     </header>
 
