@@ -218,8 +218,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const addPrinterForm = (printer = {}, isNew = true) => {
         const item = document.createElement('div');
         item.classList.add('printer-item');
-        if (printer.id) { // 프리셋에서 추가된 경우 ID를 데이터 속성으로 저장
-            item.dataset.presetId = printer.id;
+        // 수정: 기존 프린터는 presetId, 프리셋에서 새로 추가하는 경우는 id를 사용하므로 둘 다 확인
+        const idToStore = printer.presetId || printer.id;
+        if (idToStore) {
+            item.dataset.presetId = idToStore;
         }
         item.innerHTML = `
             <div class="form-group"><input type="text" class="printer-model" placeholder="모델명" value="${printer.model || ''}"></div>
