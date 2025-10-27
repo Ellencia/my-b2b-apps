@@ -7,7 +7,12 @@ if (!currentProfile) {
 // Helper to create profile-specific keys
 const getKey = (key) => `${currentProfile}_${key}`;
 
+
+
 document.addEventListener('DOMContentLoaded', () => {
+    const COORDINATE_OFFSET = 1000; // Offset for mapping logical -1000 to +1000 to physical 0 to 2000
+    const saveLayoutBtn = document.getElementById('save-layout-btn');
+
     const menuToggleBtn = document.getElementById('menu-toggle-btn');
     const dropdownMenu = document.getElementById('dropdown-menu');
     const saveImageBtnMenu = document.getElementById('save-image-btn-menu');
@@ -19,16 +24,36 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     saveImageBtnMenu.addEventListener('click', () => {
-        if (!currentDepartment) {
-            alert('부서를 먼저 선택해주세요.');
-            return;
+        let fileName = '배치도'; // Default filename
+
+        if (viewMode === 'department') {
+            if (!currentDepartment) {
+                alert('부서를 먼저 선택해주세요.');
+                return;
+            }
+            fileName = `배치도_${currentDepartment}.png`;
+        } else { // integrated mode
+            if (!activeLayoutId) {
+                alert('레이아웃을 먼저 선택해주세요.');
+                return;
+            }
+            const activeLayout = layouts.find(l => l.id === activeLayoutId);
+            if (activeLayout) {
+                fileName = `배치도_${activeLayout.name}.png`;
+            } else {
+                fileName = `배치도_통합모드.png`;
+            }
         }
+
         html2canvas(layoutContainer).then(canvas => {
             const image = canvas.toDataURL('image/png');
             const link = document.createElement('a');
             link.href = image;
-            link.download = `배치도_${currentDepartment}.png`;
+            link.download = fileName;
             link.click();
+        }).catch(error => {
+            console.error('Error generating image:', error);
+            alert('이미지 생성 중 오류가 발생했습니다. 콘솔을 확인해주세요.');
         });
         dropdownMenu.classList.remove('show');
     });
@@ -46,11 +71,6 @@ document.addEventListener('DOMContentLoaded', () => {
             dropdownMenu.classList.remove('show');
         }
     });
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-    const COORDINATE_OFFSET = 1000; // Offset for mapping logical -1000 to +1000 to physical 0 to 2000
-    const saveLayoutBtn = document.getElementById('save-layout-btn');
 
     // --- UI Mode Elements ---
     const departmentModeControls = document.getElementById('department-mode-controls');
