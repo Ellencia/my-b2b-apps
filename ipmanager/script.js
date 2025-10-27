@@ -33,15 +33,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const menuToggleBtn = document.getElementById('menu-toggle-btn');
     const dropdownMenu = document.getElementById('dropdown-menu');
     const managePresetsBtnMenu = document.getElementById('manage-presets-btn-menu');
+    const manageDepartmentPresetsBtnMenu = document.getElementById('manage-department-presets-btn-menu');
+    const departmentPresetManagerContainer = document.getElementById('department-preset-manager-container');
+    const departmentPresetForm = document.getElementById('department-preset-form');
+    const departmentPresetListEl = document.getElementById('department-preset-list');
+    const backToListFromDepartmentPresetsBtn = document.getElementById('back-to-list-from-department-presets-btn');
+    const departmentPresetIdInput = document.getElementById('department-preset-id');
+    const cancelDepartmentPresetEditBtn = document.getElementById('cancel-department-preset-edit-btn');
     const changeProfileLink = document.getElementById('change-profile-link');
 
     // --- 데이터 관리 ---
     let customers = JSON.parse(localStorage.getItem(getKey('customers'))) || [];
     let printerPresets = JSON.parse(localStorage.getItem(getKey('printerPresets'))) || [];
+    let departmentPresets = JSON.parse(localStorage.getItem(getKey('departmentPresets'))) || [];
 
     const saveData = (key, data) => localStorage.setItem(getKey(key), JSON.stringify(data));
     const saveCustomers = () => saveData('customers', customers);
     const savePresets = () => saveData('printerPresets', printerPresets);
+    const saveDepartmentPresets = () => saveData('departmentPresets', departmentPresets);
 
     // --- 데이터 마이그레이션 ---
     const migrateData = () => {};
@@ -140,11 +149,30 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    const renderDepartmentPresets = () => {
+        departmentPresetListEl.innerHTML = '';
+        if (departmentPresets.length === 0) {
+            departmentPresetListEl.innerHTML = '<li>저장된 부서 프리셋이 없습니다.</li>';
+            return;
+        }
+        departmentPresets.forEach(p => {
+            const li = document.createElement('li');
+            li.innerHTML = `<span><strong>${p.name}</strong><br><small>GW: ${p.gateway || ''} / DNS: ${p.dns1 || ''}</small></span>
+                          <div>
+                            <button class="btn-secondary edit-department-preset-btn" data-id="${p.id}">수정</button>
+                            <button class="btn-danger delete-department-preset-btn" data-id="${p.id}">삭제</button>
+                          </div>`;
+            li.dataset.id = p.id;
+            departmentPresetListEl.appendChild(li);
+        });
+    };
+
     const showPage = (page) => {
         customerListContainer.style.display = 'none';
         customerFormContainer.style.display = 'none';
         customerDetailsContainer.style.display = 'none';
         presetManagerContainer.style.display = 'none';
+        departmentPresetManagerContainer.style.display = 'none';
         addCustomerFAB.style.display = 'none';
         if (page === 'list') {
             customerListContainer.style.display = 'block';
@@ -155,12 +183,18 @@ document.addEventListener('DOMContentLoaded', () => {
             customerDetailsContainer.style.display = 'block';
         } else if (page === 'presets') {
             presetManagerContainer.style.display = 'block';
+        } else if (page === 'department-presets') {
+            departmentPresetManagerContainer.style.display = 'block';
         }
     };
 
     const showForm = (customer = null) => {
         customerForm.reset();
         printerFormList.innerHTML = '';
+
+        const departmentDatalist = document.getElementById('department-presets-list');
+        departmentDatalist.innerHTML = departmentPresets.map(p => `<option value="${p.name}"></option>`).join('');
+
         if (customer) {
             formTitle.textContent = '고객 정보 수정';
             customerIdInput.value = customer.id;
@@ -212,10 +246,28 @@ document.addEventListener('DOMContentLoaded', () => {
     cancelBtn.addEventListener('click', () => showPage('list'));
     addPrinterBtnForm.addEventListener('click', () => addPrinterForm({}, true));
     backToListFromPresetsBtn.addEventListener('click', () => showPage('list'));
+    backToListFromDepartmentPresetsBtn.addEventListener('click', () => showPage('list'));
+
+    manageDepartmentPresetsBtnMenu.addEventListener('click', () => {
+        renderDepartmentPresets();
+        showPage('department-presets');
+        dropdownMenu.classList.remove('show');
+    });
+
     searchInput.addEventListener('input', renderCustomers);
     departmentFilter.addEventListener('change', () => {
         localStorage.setItem(getKey('selectedDepartment'), departmentFilter.value);
         renderCustomers();
+    });
+
+    document.getElementById('customer-department').addEventListener('input', (e) => {
+        const departmentName = e.target.value.trim();
+        const preset = departmentPresets.find(p => p.name === departmentName);
+        if (preset) {
+            document.getElementById('gateway').value = preset.gateway || '';
+            document.getElementById('dns1').value = preset.dns1 || '';
+            document.getElementById('dns2').value = preset.dns2 || '';
+        }
     });
 
     customerForm.addEventListener('submit', (e) => {
@@ -376,6 +428,59 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     cancelPresetEditBtn.addEventListener('click', resetPresetForm);
+
+    const resetDepartmentPresetForm = () => {
+        departmentPresetForm.reset();
+        departmentPresetIdInput.value = '';
+        departmentPresetForm.querySelector('button[type="submit"]').textContent = '부서 프리셋 저장';
+        cancelDepartmentPresetEditBtn.style.display = 'none';
+    }
+
+    departmentPresetForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const presetId = departmentPresetIdInput.value;
+        const presetData = {
+            name: document.getElementById('department-preset-name').value.trim(),
+            gateway: document.getElementById('department-preset-gateway').value,
+            dns1: document.getElementById('department-preset-dns1').value,
+            dns2: document.getElementById('department-preset-dns2').value,
+        };
+        if (presetId) {
+            const index = departmentPresets.findIndex(p => p.id == presetId);
+            if (index > -1) {
+                departmentPresets[index] = { ...departmentPresets[index], ...presetData };
+            }
+        } else {
+            departmentPresets.push({ ...presetData, id: Date.now() });
+        }
+        saveDepartmentPresets();
+        renderDepartmentPresets();
+        resetDepartmentPresetForm();
+    });
+
+    departmentPresetListEl.addEventListener('click', (e) => {
+        const presetId = e.target.dataset.id;
+        if (e.target.classList.contains('delete-department-preset-btn')) {
+            if (confirm('정말로 이 부서 프리셋을 삭제하시겠습니까?')) {
+                departmentPresets = departmentPresets.filter(p => p.id != presetId);
+                saveDepartmentPresets();
+                renderDepartmentPresets();
+            }
+        } else if (e.target.classList.contains('edit-department-preset-btn')) {
+            const preset = departmentPresets.find(p => p.id == presetId);
+            if (preset) {
+                departmentPresetIdInput.value = preset.id;
+                document.getElementById('department-preset-name').value = preset.name;
+                document.getElementById('department-preset-gateway').value = preset.gateway;
+                document.getElementById('department-preset-dns1').value = preset.dns1;
+                document.getElementById('department-preset-dns2').value = preset.dns2;
+                departmentPresetForm.querySelector('button[type="submit"]').textContent = '부서 프리셋 수정';
+                cancelDepartmentPresetEditBtn.style.display = 'inline-block';
+            }
+        }
+    });
+
+    cancelDepartmentPresetEditBtn.addEventListener('click', resetDepartmentPresetForm);
 
     addPrinterFromPresetBtn.addEventListener('click', () => {
         if (printerPresets.length === 0) {

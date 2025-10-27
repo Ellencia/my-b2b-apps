@@ -15,6 +15,7 @@
                 <div id="dropdown-menu" class="dropdown-menu">
                     <a href="../layout/index.html" class="dropdown-item">좌석 배치도 관리</a>
                     <button id="manage-presets-btn-menu" class="dropdown-item">프린터프리셋 관리</button>
+                    <button id="manage-department-presets-btn-menu" class="dropdown-item">부서 프리셋 관리</button>
                     <a href="../reporter/index.html" class="dropdown-item">csv파일 생성</a>
                     <a href="../select_profile.html" id="change-profile-link" class="dropdown-item">프로필 변경</a>
                 </div>
@@ -43,7 +44,8 @@
                 </div>
                 <div class="form-group">
                     <label for="customer-department">소속(부서)</label>
-                    <input type="text" id="customer-department">
+                    <input type="text" id="customer-department" list="department-presets-list">
+                    <datalist id="department-presets-list"></datalist>
                 </div>
 
                 <h3>네트워크 정보</h3>
@@ -71,14 +73,14 @@
                 <h3>상태</h3>
                 <div class="form-group form-group-inline">
                     <input type="checkbox" id="is-pending-update">
-                    <label for="is-pending-update">업데이트 보류</label>
+                    <label for="is-pending-update">보류</label>
                     <input type="checkbox" id="is-error-state" style="margin-left: 20px;">
                     <label for="is-error-state">불가</label>
                 </div>
 
-                <h3>백업 정보</h3>
+                <h3>비고</h3>
                 <div class="form-group">
-                    <label for="backup-notes">백업 특이사항</label>
+                    <label for="backup-notes">비고</label>
                     <textarea id="backup-notes" rows="3"></textarea>
                 </div>
 
@@ -136,6 +138,43 @@
             </ul>
             <div class="form-actions">
                 <button type="button" id="back-to-list-from-presets-btn" class="btn-secondary">고객 목록으로</button>
+            </div>
+        </div>
+
+        <!-- 부서 프리셋 관리 화면 -->
+        <div id="department-preset-manager-container" class="page">
+            <h2>부서 프리셋 관리</h2>
+            <form id="department-preset-form">
+                <h3>새 부서 프리셋 추가</h3>
+                <div class="form-group">
+                    <label for="department-preset-name">부서 이름*</label>
+                    <input type="text" id="department-preset-name" placeholder="예: 경영지원팀" required>
+                </div>
+                <div class="form-group">
+                    <label for="department-preset-gateway">게이트웨이</label>
+                    <input type="text" id="department-preset-gateway" inputmode="numeric">
+                </div>
+                <div class="form-group">
+                    <label for="department-preset-dns1">기본 DNS</label>
+                    <input type="text" id="department-preset-dns1" inputmode="numeric">
+                </div>
+                <div class="form-group">
+                    <label for="department-preset-dns2">보조 DNS</label>
+                    <input type="text" id="department-preset-dns2" inputmode="numeric">
+                </div>
+                <input type="hidden" id="department-preset-id">
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">부서 프리셋 저장</button>
+                    <button type="button" id="cancel-department-preset-edit-btn" class="btn-secondary" style="display: none;">취소</button>
+                </div>
+            </form>
+            <hr>
+            <h3>저장된 부서 프리셋 목록</h3>
+            <ul id="department-preset-list">
+                <!-- 저장된 부서 프리셋이 여기에 동적으로 추가됩니다. -->
+            </ul>
+            <div class="form-actions">
+                <button type="button" id="back-to-list-from-department-presets-btn" class="btn-secondary">고객 목록으로</button>
             </div>
         </div>
 
