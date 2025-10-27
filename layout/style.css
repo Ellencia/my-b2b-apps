@@ -171,14 +171,25 @@ main {
 
 .pc-item:active {
     cursor: grabbing;
+    z-index: 11; /* 드래그하는 동안 다른 요소 위에 있도록 */
 }
 
-.pc-item-pending {
-    background-color: #ffc107; /* 보류 상태를 위한 노란색 */
+.pc-item.pc-item-pending {
+    background-color: #fadb14; /* 진한 노란색 */
+    border: 1px solid #fadb14;
+    color: #333;
 }
 
-.pc-item-error {
-    background-color: #dc3545; /* 불가 상태를 위한 붉은색 */
+.pc-item.pc-item-completed {
+    background-color: #52c41a; /* 진한 녹색 */
+    border: 1px solid #52c41a;
+    color: #fff;
+}
+
+.pc-item.pc-item-error {
+    background-color: #f5222d; /* 진한 붉은색 */
+    border: 1px solid #f5222d;
+    color: #fff;
 }
 
 footer {

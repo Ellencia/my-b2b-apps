@@ -72,10 +72,22 @@
 
                 <h3>상태</h3>
                 <div class="form-group form-group-inline">
-                    <input type="checkbox" id="is-pending-update">
+                    <input type="checkbox" id="is-completed">
+                    <label for="is-completed">완료</label>
+                    <input type="checkbox" id="is-pending-update" style="margin-left: 20px;">
                     <label for="is-pending-update">보류</label>
                     <input type="checkbox" id="is-error-state" style="margin-left: 20px;">
                     <label for="is-error-state">불가</label>
+                </div>
+
+                <div class="form-group-inline" style="margin-bottom: 1rem;">
+                    <label style="font-weight: bold;">백업 및 원복:</label>
+                    <input type="checkbox" id="has-backup" style="margin-left: 10px;">
+                    <label for="has-backup">백업 있음</label>
+                    <span id="restore-status-container" style="display: none; margin-left: 20px;">
+                        <input type="checkbox" id="is-restored">
+                        <label for="is-restored">원복 완료</label>
+                    </span>
                 </div>
 
                 <h3>비고</h3>

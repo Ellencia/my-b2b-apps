@@ -54,7 +54,9 @@ document.addEventListener('DOMContentLoaded', () => {
         departmentCustomers.forEach(customer => {
             const pcElement = document.createElement('div');
             pcElement.classList.add('pc-item');
-            if (customer.isError) {
+            if (customer.isCompleted) {
+                pcElement.classList.add('pc-item-completed');
+            } else if (customer.isError) {
                 pcElement.classList.add('pc-item-error');
             } else if (customer.isPending) {
                 pcElement.classList.add('pc-item-pending');

@@ -72,7 +72,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         filteredCustomers.forEach(c => {
             const li = document.createElement('li');
-            if (c.isError) {
+            if (c.isCompleted) {
+                li.classList.add('customer-list-completed');
+            } else if (c.isError) {
                 li.classList.add('customer-list-error');
             } else if (c.isPending) {
                 li.classList.add('customer-list-pending');
@@ -94,6 +96,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 return displayString ? `<small class="customer-list-extra">🖨️ ${displayString}</small>` : null;
             }).filter(Boolean);
             allExtraInfoHtml = allExtraInfoHtml.concat(printerDisplayHtmls);
+
+            // 백업 및 원복 상태 표시
+            if (c.hasBackup && c.isRestored) {
+                allExtraInfoHtml.push(`<small class="customer-list-extra">🔄 원복완료</small>`);
+            } else if (c.hasBackup) {
+                allExtraInfoHtml.push(`<small class="customer-list-extra">💾 백업있음</small>`);
+            }
+
             if (c.backupNotes && c.backupNotes.trim() !== '') {
                 allExtraInfoHtml.push(`<small class="customer-list-extra">📝 ${c.backupNotes}</small>`);
             }
@@ -206,8 +216,21 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('dns1').value = customer.dns1;
             document.getElementById('dns2').value = customer.dns2;
             document.getElementById('backup-notes').value = customer.backupNotes;
+            document.getElementById('is-completed').checked = customer.isCompleted || false;
             document.getElementById('is-pending-update').checked = customer.isPending || false;
             document.getElementById('is-error-state').checked = customer.isError || false;
+
+            // 백업 및 원복 상태 처리
+            const hasBackup = customer.hasBackup || false;
+            document.getElementById('has-backup').checked = hasBackup;
+            document.getElementById('is-restored').checked = customer.isRestored || false;
+
+            if (hasBackup) {
+                document.getElementById('restore-status-container').style.display = 'inline-block';
+            } else {
+                document.getElementById('restore-status-container').style.display = 'none';
+            }
+
             if (customer.printers) {
                 customer.printers.forEach(p => addPrinterForm(p, false));
             }
@@ -270,6 +293,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    const restoreStatusContainer = document.getElementById('restore-status-container');
+    const hasBackupCheckbox = document.getElementById('has-backup');
+    const isRestoredCheckbox = document.getElementById('is-restored');
+
+    hasBackupCheckbox.addEventListener('change', (e) => {
+        if (e.target.checked) {
+            restoreStatusContainer.style.display = 'inline-block';
+        } else {
+            restoreStatusContainer.style.display = 'none';
+            isRestoredCheckbox.checked = false; // 백업 없으면 원복도 해제
+        }
+    });
+
     customerForm.addEventListener('submit', (e) => {
         e.preventDefault();
         let newPresetsAdded = false;
@@ -305,8 +341,11 @@ document.addEventListener('DOMContentLoaded', () => {
             id: customerIdInput.value ? parseInt(customerIdInput.value) : Date.now(),
             name: document.getElementById('customer-name').value,
             department: document.getElementById('customer-department').value,
+            isCompleted: document.getElementById('is-completed').checked,
             isPending: document.getElementById('is-pending-update').checked,
             isError: document.getElementById('is-error-state').checked,
+            hasBackup: document.getElementById('has-backup').checked,
+            isRestored: document.getElementById('has-backup').checked ? document.getElementById('is-restored').checked : false,
             ip: document.getElementById('ip-address').value,
             subnet: document.getElementById('subnet-mask').value,
             gateway: document.getElementById('gateway').value,

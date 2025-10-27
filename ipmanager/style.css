@@ -281,7 +281,13 @@ hr {
 }
 
 .customer-list-pending {
-    border-left: 5px solid var(--warning-color);
+    background-color: #fffbe6; /* 연한 노란색 배경 */
+    border-left: 5px solid #fadb14; /* 노란색 테두리 */
+}
+
+.customer-list-completed {
+    background-color: #f6ffed; /* 연한 녹색 배경 */
+    border-left: 5px solid #52c41a; /* 녹색 테두리 */
 }
 
 .customer-list-error {
