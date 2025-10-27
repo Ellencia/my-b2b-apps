@@ -40,17 +40,33 @@ document.addEventListener('DOMContentLoaded', () => {
             const deptCustomers = customersByDept[dept];
             deptCustomers.forEach(customer => {
                 let statusText = '';
-                if (customer.isError) {
+                if (customer.isCompleted) {
+                    statusText = '완료';
+                } else if (customer.isError) {
                     statusText = '불가능';
                 } else if (customer.isPending) {
                     statusText = '보류';
                 }
 
-                reportData.push({ department: dept, name: customer.name, status: statusText });
+                reportData.push({
+                    department: dept,
+                    name: customer.name,
+                    pcId: customer.pcId || '',
+                    ip: customer.ip || '',
+                    backupNotes: customer.backupNotes || '',
+                    status: statusText
+                });
 
                 let statusHtml = '';
                 if (statusText) {
-                    let statusClass = statusText === '보류' ? 'status-pending' : 'status-impossible';
+                    let statusClass = '';
+                    if (statusText === '완료') {
+                        statusClass = 'status-complete';
+                    } else if (statusText === '보류') {
+                        statusClass = 'status-pending';
+                    } else if (statusText === '불가능') {
+                        statusClass = 'status-impossible';
+                    }
                     statusHtml = `<span class="status ${statusClass}">${statusText}</span>`;
                 }
 
@@ -64,14 +80,20 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const exportToCsv = (filename, data) => {
-        const header = ['부서', '이름', '상태'];
-        const csvRows = [header.join(',')];
-
-        data.forEach(row => {
-            const values = [row.department, row.name, row.status];
-            csvRows.push(values.join(','));
-        });
-
+            const header = ['부서', '이름', 'PC ID', 'IP 주소', '상태', '비고'];
+            const csvRows = [header.join(',')];
+        
+            data.forEach(row => {
+                    const values = [
+                        row.department,
+                        row.name,
+                        row.pcId,
+                        row.ip,
+                        row.status,
+                        row.backupNotes
+                    ];
+                    csvRows.push(values.join(','));
+                });
         const csvString = csvRows.join('\r\n');
         const blob = new Blob(['\uFEFF' + csvString], { type: 'text/csv;charset=utf-8;' });
 

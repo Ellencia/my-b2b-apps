@@ -119,6 +119,11 @@ li {
     border: 1px solid #dc3545;
 }
 
+.status-complete {
+    color: #52c41a; /* Green color for completed status */
+    border: 1px solid #52c41a;
+}
+
 /* 인쇄용 스타일 */
 @media print {
     body {
