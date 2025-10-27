@@ -21,16 +21,63 @@
         </div>
     </header>
 
-            <main>
-                <div class="controls">
-                    <label for="department-select">부서 선택:</label>
-                    <select id="department-select"></select>
-                    <button id="save-layout-btn">레이아웃 저장</button>
+    <main>
+        <div id="department-mode-controls">
+            <div class="controls">
+                <select id="department-select"></select>
+                <button id="save-layout-btn">레이아웃 저장</button>
+                <button id="change-mode-btn" class="btn-secondary">통합 모드로 전환</button>
+            </div>
+        </div>
+
+        <!-- Integrated Mode UI (Hidden by default) -->
+        <div id="integrated-mode-controls" style="display: none;">
+            <div class="controls-main">
+                <div id="layout-tabs-container" class="layout-tabs"></div>
+                <button id="manage-layouts-btn" class="btn-primary">⚙️ 레이아웃 관리</button>
+                <button id="change-mode-btn-integrated" class="btn-secondary">부서 모드로 전환</button>
+            </div>
+            <div class="controls-sub">
+                <select id="department-focus-select"></select>
+                <button id="toggle-dept-names-btn" class="btn-secondary">부서 표시</button>
+                <div class="zoom-controls">
+                    <button id="zoom-out-btn">-</button>
+                    <button id="zoom-reset-btn">100%</button>
+                    <button id="zoom-in-btn">+</button>
                 </div>
-                <div class="layout-container" id="layout-container">
-                    <!-- PC elements will be rendered here -->
+            </div>
+        </div>
+
+        <div class="layout-container-wrapper">
+            <div id="layout-container"></div>
+        </div>
+
+        <!-- Layout Management Modal (for Integrated Mode) -->
+        <div id="manage-layouts-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>레이아웃 관리</h2>
+                    <button id="close-modal-btn" class="close-btn">&times;</button>
                 </div>
-            </main>
+                <div class="modal-body">
+                    <div class="layout-editor">
+                        <h3>레이아웃 목록</h3>
+                        <ul id="layout-management-list"></ul>
+                        <div class="form-group-inline">
+                            <input type="text" id="new-layout-name" placeholder="새 레이아웃 이름">
+                            <button id="add-layout-btn" class="btn-primary">추가</button>
+                        </div>
+                    </div>
+                    <div class="department-assigner">
+                        <h3>부서 할당</h3>
+                        <p><strong id="selected-layout-name"></strong> 레이아웃에 표시할 부서를 선택하세요.</p>
+                        <div id="department-assignment-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
     <script src="script.js"></script>
 </body>
 </html>
