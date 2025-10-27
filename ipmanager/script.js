@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const cancelBtn = document.getElementById('cancel-btn');
     const formTitle = document.getElementById('form-title');
     const customerIdInput = document.getElementById('customer-id');
+    const pcIdInput = document.getElementById('pc-id'); // New PC ID input
     const addPrinterBtnForm = document.getElementById('add-printer-btn-form');
     const addPrinterFromPresetBtn = document.getElementById('add-printer-from-preset-btn');
     const printerFormList = document.getElementById('printer-form-list');
@@ -79,6 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (c.isPending) {
                 li.classList.add('customer-list-pending');
             }
+            let pcIdDisplay = c.pcId ? ` <small class="customer-pc-id-display">(${c.pcId})</small>` : '';
             let departmentDisplay = c.department ? ` <small class="customer-department-display">(${c.department})</small>` : '';
             let allExtraInfoHtml = [];
             const printerDisplayHtmls = c.printers.map(printer => {
@@ -108,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 allExtraInfoHtml.push(`<small class="customer-list-extra">📝 ${c.backupNotes}</small>`);
             }
             const extraInfoBlock = allExtraInfoHtml.length > 0 ? `<br>${allExtraInfoHtml.join('')}` : '';
-            li.innerHTML = `<span><strong>${c.name}</strong>${departmentDisplay}<br><small>${c.ip}</small>${extraInfoBlock}</span>`;
+            li.innerHTML = `<span><strong>${c.name}</strong>${pcIdDisplay}${departmentDisplay}<br><small>${c.ip}</small>${extraInfoBlock}</span>`;
             li.dataset.id = c.id;
             customerListEl.appendChild(li);
         });
@@ -127,6 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const printersHtml = customer.printers.map(p => `<li>${p.model} (${p.ip}:${p.port})</li>`).join('') || '<li>등록된 프린터가 없습니다.</li>';
         customerDetailsContainer.innerHTML = `
             <h2>${customer.name}</h2>
+            <p><strong>PC ID:</strong> ${customer.pcId || '-'}</p>
             <p><strong>소속(부서):</strong> ${customer.department || '-'}</p>
             <h3>네트워크 정보</h3>
             <p>IP: ${customer.ip}, 서브넷: ${customer.subnet || '-'}, 게이트웨이: ${customer.gateway || '-'}</p>
@@ -209,6 +212,7 @@ document.addEventListener('DOMContentLoaded', () => {
             formTitle.textContent = '고객 정보 수정';
             customerIdInput.value = customer.id;
             document.getElementById('customer-name').value = customer.name;
+            pcIdInput.value = customer.pcId || ''; // Populate PC ID
             document.getElementById('customer-department').value = customer.department;
             document.getElementById('ip-address').value = customer.ip;
             document.getElementById('subnet-mask').value = customer.subnet;
@@ -237,6 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             formTitle.textContent = '새 고객 추가';
             customerIdInput.value = '';
+            pcIdInput.value = ''; // Clear PC ID for new customer
             document.getElementById('is-pending-update').checked = false;
             document.getElementById('is-error-state').checked = false;
         }
@@ -340,6 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const customerData = {
             id: customerIdInput.value ? parseInt(customerIdInput.value) : Date.now(),
             name: document.getElementById('customer-name').value,
+            pcId: pcIdInput.value, // Store PC ID
             department: document.getElementById('customer-department').value,
             isCompleted: document.getElementById('is-completed').checked,
             isPending: document.getElementById('is-pending-update').checked,
