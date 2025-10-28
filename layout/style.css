@@ -290,9 +290,11 @@ main {
     margin-left: auto;
 }
 
-#department-mode-controls #department-select {
-    margin-left: auto;
+#department-mode-controls .controls {
+  width: 100%; /* Ensure it takes full width */
+  justify-content: flex-end;
 }
+
 
 .pc-item {
     background-color: #007bff;
