@@ -111,7 +111,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 allExtraInfoHtml.push(`<small class="customer-list-extra">📝 ${c.backupNotes}</small>`);
             }
             const extraInfoBlock = allExtraInfoHtml.length > 0 ? `<br>${allExtraInfoHtml.join('')}` : '';
-            li.innerHTML = `<span><strong>${c.name}</strong>${workerNameDisplay}${pcIdDisplay}${departmentDisplay}<br><small>${c.ip}</small><br><small>등록일: ${new Date(c.createdAt).toLocaleDateString()}</small>${extraInfoBlock}</span>`;
+            // 고객 목록 항목 구성
+            li.innerHTML = `<span><strong>${c.name}</strong>${departmentDisplay}${pcIdDisplay}${workerNameDisplay}<br><small>${c.ip}</small><br><small>등록일: ${new Date(c.createdAt).toLocaleDateString()}</small>${extraInfoBlock}</span>`;
             li.dataset.id = c.id;
             customerListEl.appendChild(li);
         });
@@ -132,9 +133,9 @@ document.addEventListener('DOMContentLoaded', () => {
         customerDetailsContainer.innerHTML = `
             <h2>${customer.name}</h2>
             <p><strong>등록일:</strong> ${new Date(customer.createdAt).toLocaleString()}</p>
-            <p><strong>PC 작업자:</strong> ${customer.workerName || '-'}</p>
-            <p><strong>PC ID:</strong> ${customer.pcId || '-'}</p>
             <p><strong>소속(부서):</strong> ${customer.department || '-'}</p>
+            <p><strong>PC ID:</strong> ${customer.pcId || '-'}</p>
+            <p><strong>PC 작업자:</strong> ${customer.workerName || '-'}</p>
             <h3>네트워크 정보</h3>
             <p>IP: ${customer.ip}, 서브넷: ${customer.subnet || '-'}, 게이트웨이: ${customer.gateway || '-'}</p>
             <p>DNS: ${customer.dns1 || '-'} / ${customer.dns2 || '-'}</p>

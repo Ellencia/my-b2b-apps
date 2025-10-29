@@ -43,17 +43,17 @@
                     <input type="text" id="customer-name" required>
                 </div>
                 <div class="form-group">
+                    <label for="customer-department">소속(부서)</label>
+                    <input type="text" id="customer-department" list="department-presets-list">
+                    <datalist id="department-presets-list"></datalist>
+                </div>
+                <div class="form-group">
                     <label for="worker-name">PC 작업자 이름</label>
                     <input type="text" id="worker-name">
                 </div>
                 <div class="form-group">
                     <label for="pc-id">PC ID</label>
                     <input type="text" id="pc-id" required inputmode="numeric">
-                </div>
-                <div class="form-group">
-                    <label for="customer-department">소속(부서)</label>
-                    <input type="text" id="customer-department" list="department-presets-list">
-                    <datalist id="department-presets-list"></datalist>
                 </div>
 
                 <h3>네트워크 정보</h3>
