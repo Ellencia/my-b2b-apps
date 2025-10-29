@@ -81,6 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 li.classList.add('customer-list-pending');
             }
             let pcIdDisplay = c.pcId ? ` <small class="customer-pc-id-display">(${c.pcId})</small>` : '';
+            let workerNameDisplay = c.workerName ? ` <small class="customer-worker-name-display">(${c.workerName})</small>` : '';
             let departmentDisplay = c.department ? ` <small class="customer-department-display">(${c.department})</small>` : '';
             let allExtraInfoHtml = [];
             const printerDisplayHtmls = c.printers.map(printer => {
@@ -110,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 allExtraInfoHtml.push(`<small class="customer-list-extra">📝 ${c.backupNotes}</small>`);
             }
             const extraInfoBlock = allExtraInfoHtml.length > 0 ? `<br>${allExtraInfoHtml.join('')}` : '';
-            li.innerHTML = `<span><strong>${c.name}</strong>${pcIdDisplay}${departmentDisplay}<br><small>${c.ip}</small>${extraInfoBlock}</span>`;
+            li.innerHTML = `<span><strong>${c.name}</strong>${workerNameDisplay}${pcIdDisplay}${departmentDisplay}<br><small>${c.ip}</small><br><small>등록일: ${new Date(c.createdAt).toLocaleDateString()}</small>${extraInfoBlock}</span>`;
             li.dataset.id = c.id;
             customerListEl.appendChild(li);
         });
@@ -125,10 +126,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // 고객 상세 정보 렌더링
     const renderDetails = (customer) => {
         const printersHtml = customer.printers.map(p => `<li>${p.model} (${p.ip}:${p.port})</li>`).join('') || '<li>등록된 프린터가 없습니다.</li>';
         customerDetailsContainer.innerHTML = `
             <h2>${customer.name}</h2>
+            <p><strong>등록일:</strong> ${new Date(customer.createdAt).toLocaleString()}</p>
+            <p><strong>PC 작업자:</strong> ${customer.workerName || '-'}</p>
             <p><strong>PC ID:</strong> ${customer.pcId || '-'}</p>
             <p><strong>소속(부서):</strong> ${customer.department || '-'}</p>
             <h3>네트워크 정보</h3>
@@ -200,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
             departmentPresetManagerContainer.style.display = 'block';
         }
     };
-
+    // 제출 폼
     const showForm = (customer = null) => {
         customerForm.reset();
         printerFormList.innerHTML = '';
@@ -212,6 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
             formTitle.textContent = '고객 정보 수정';
             customerIdInput.value = customer.id;
             document.getElementById('customer-name').value = customer.name;
+            document.getElementById('worker-name').value = customer.workerName || '';
             pcIdInput.value = customer.pcId || ''; // Populate PC ID
             document.getElementById('customer-department').value = customer.department;
             document.getElementById('ip-address').value = customer.ip;
@@ -344,7 +349,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const customerData = {
             id: customerIdInput.value ? parseInt(customerIdInput.value) : Date.now(),
+            createdAt: customerIdInput.value ? customers.find(c => c.id == customerIdInput.value).createdAt : Date.now(), // Add creation timestamp
             name: document.getElementById('customer-name').value,
+            workerName: document.getElementById('worker-name').value, // Store worker name
             pcId: pcIdInput.value, // Store PC ID
             department: document.getElementById('customer-department').value,
             isCompleted: document.getElementById('is-completed').checked,
