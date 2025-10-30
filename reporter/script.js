@@ -49,10 +49,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 reportData.push({
+                    createdat: createdAt,
                     department: dept,
                     name: customer.name,
                     pcId: customer.pcId || '',
                     ip: customer.ip || '',
+                    workername: workerName,
                     backupNotes: customer.backupNotes || '',
                     status: statusText
                 });
@@ -85,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
             data.forEach(row => {
                     const values = [
-                        row.createdAt,
+                        row.createdat,
                         row.department,
                         row.name,
                         row.pcId,
