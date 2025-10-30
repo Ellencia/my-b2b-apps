@@ -149,6 +149,3 @@ const generateReport = (filterDate) => {
             dropdownMenu.classList.remove('show');
         }
     });
-
-    generateReport();
-});
