@@ -49,12 +49,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 reportData.push({
-                    createdat: createdAt,
+                    createdat: customer.createdAt,
                     department: dept,
                     name: customer.name,
                     pcId: customer.pcId || '',
                     ip: customer.ip || '',
-                    workername: workerName,
+                    workername: customer.workerName,
                     backupNotes: customer.backupNotes || '',
                     status: statusText
                 });
