@@ -80,16 +80,18 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const exportToCsv = (filename, data) => {
-            const header = ['부서', '이름', 'PC ID', 'IP 주소', '상태', '비고'];
+            const header = ['작업일', '부서', '이름', 'PC ID', 'IP 주소', '상태', '작업자', '비고'];
             const csvRows = [header.join(',')];
         
             data.forEach(row => {
                     const values = [
+                        row.createdAt,
                         row.department,
                         row.name,
                         row.pcId,
                         row.ip,
                         row.status,
+                        row.workername,
                         row.backupNotes
                     ];
                     csvRows.push(values.join(','));
