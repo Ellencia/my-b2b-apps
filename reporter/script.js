@@ -8,37 +8,43 @@ const getKey = (key) => `${currentProfile}_${key}`;
 
 document.addEventListener('DOMContentLoaded', () => {
     const reportContainer = document.getElementById('report-container');
-    
-    let reportData = []; // Store data for CSV export
+    const dateFilterInput = document.getElementById('date-filter');
+    let reportData = [];
+    let customersRaw = [];
 
-    const generateReport = () => {
+    // 기존 generateReport 함수에서 customersRaw 값을 저장
+    const generateReport = (filteredDate) => {
         const customers = JSON.parse(localStorage.getItem(getKey('customers'))) || [];
-        reportData = []; // Reset data
+        customersRaw = customers; // 전체 데이터 저장
 
-        if (customers.length === 0) {
+        // 아래 조건에 따라 필터링
+        const filteredCustomers = filteredDate ? 
+            customers.filter(c => {
+                const dateObj = new Date(c.createdAt);
+                const y = dateObj.getFullYear();
+                const m = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+                const d = dateObj.getDate().toString().padStart(2, '0');
+                const dateStr = `${y}-${m}-${d}`;
+                return dateStr === filteredDate;
+            })
+            : customers;
+
+        reportData = [];
+        if (filteredCustomers.length === 0) {
             reportContainer.innerHTML = '<p>표시할 고객 데이터가 없습니다.</p>';
             return;
         }
-
-        const customersByDept = customers.reduce((acc, customer) => {
+        const customersByDept = filteredCustomers.reduce((acc, customer) => {
             const dept = customer.department || '미지정';
-            if (!acc[dept]) {
-                acc[dept] = [];
-            }
+            if (!acc[dept]) acc[dept] = [];
             acc[dept].push(customer);
             return acc;
         }, {});
-
         let reportHtml = '';
         const sortedDepts = Object.keys(customersByDept).sort();
-
         sortedDepts.forEach(dept => {
-            reportHtml += `<div class="department-section">
-                             <h2>${dept}</h2>
-                             <ul>`;
-            
-            const deptCustomers = customersByDept[dept];
-            deptCustomers.forEach(customer => {
+            reportHtml += `<div class="department-section"><h2>${dept}</h2><ul>`;
+            customersByDept[dept].forEach(customer => {
                 let statusText = '';
                 if (customer.isCompleted) {
                     statusText = '완료';
@@ -47,9 +53,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (customer.isPending) {
                     statusText = '보류';
                 }
-
                 reportData.push({
-                    createdAt: new Date(customer.createdAt).toLocaleDateString('ko-KR'),  // 날짜 형식으로 변환
+                    createdAt: new Date(customer.createdAt).toLocaleDateString('ko-KR'),
                     department: dept,
                     name: customer.name,
                     pcId: customer.pcId || '',
@@ -58,29 +63,31 @@ document.addEventListener('DOMContentLoaded', () => {
                     backupNotes: customer.backupNotes || '',
                     status: statusText
                 });
-
                 let statusHtml = '';
                 if (statusText) {
                     let statusClass = '';
-                    if (statusText === '완료') {
-                        statusClass = 'status-complete';
-                    } else if (statusText === '보류') {
-                        statusClass = 'status-pending';
-                    } else if (statusText === '불가능') {
-                        statusClass = 'status-impossible';
-                    }
+                    if (statusText === '완료') statusClass = 'status-complete';
+                    else if (statusText === '보류') statusClass = 'status-pending';
+                    else if (statusText === '불가능') statusClass = 'status-impossible';
                     statusHtml = `<span class="status ${statusClass}">${statusText}</span>`;
                 }
-
                 reportHtml += `<li>${customer.name}${statusHtml}</li>`;
             });
-
             reportHtml += `</ul></div>`;
         });
-
         reportContainer.innerHTML = reportHtml;
     };
 
+    // 날짜 입력 변경 이벤트 핸들러
+    dateFilterInput.addEventListener('change', (e) => {
+        const selectedDate = e.target.value; // YYYY-MM-DD
+        generateReport(selectedDate);
+    });
+
+    // 기존 내보내기 버튼은 reportData에 대해만 동작하게 이미 되어 있음
+
+    generateReport(); // 최초 전체 로딩
+});
     const exportToCsv = (filename, data) => {
             const header = ['작업일', '부서', '이름', 'PC ID', 'IP 주소', '상태', '작업자', '비고'];
             const csvRows = [header.join(',')];
