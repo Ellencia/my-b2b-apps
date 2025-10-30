@@ -13,33 +13,31 @@ document.addEventListener('DOMContentLoaded', () => {
     let customersRaw = [];
 
     // 기존 generateReport 함수에서 customersRaw 값을 저장
-    const generateReport = (filteredDate) => {
-        const customers = JSON.parse(localStorage.getItem(getKey('customers'))) || [];
-        customersRaw = customers; // 전체 데이터 저장
+const generateReport = (filterDate) => {
+    const customers = JSON.parse(localStorage.getItem(getKey('customers'))) || [];
+    reportData = [];
 
-        // 아래 조건에 따라 필터링
-        const filteredCustomers = filteredDate ? 
-            customers.filter(c => {
-                const dateObj = new Date(c.createdAt);
-                const y = dateObj.getFullYear();
-                const m = (dateObj.getMonth() + 1).toString().padStart(2, '0');
-                const d = dateObj.getDate().toString().padStart(2, '0');
-                const dateStr = `${y}-${m}-${d}`;
-                return dateStr === filteredDate;
-            })
-            : customers;
+    // 날짜 필터가 있을 경우 필터링
+    const filteredCustomers = filterDate ? customers.filter(customer => {
+        const dateObj = new Date(customer.createdAt);
+        const y = dateObj.getFullYear();
+        const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const d = String(dateObj.getDate()).padStart(2, '0');
+        const customerDate = `${y}-${m}-${d}`;
+        return customerDate === filterDate;
+    }) : customers;
 
-        reportData = [];
-        if (filteredCustomers.length === 0) {
-            reportContainer.innerHTML = '<p>표시할 고객 데이터가 없습니다.</p>';
-            return;
-        }
-        const customersByDept = filteredCustomers.reduce((acc, customer) => {
-            const dept = customer.department || '미지정';
-            if (!acc[dept]) acc[dept] = [];
-            acc[dept].push(customer);
-            return acc;
-        }, {});
+    if (filteredCustomers.length === 0) {
+        reportContainer.innerHTML = '<p>표시할 고객 데이터가 없습니다.</p>';
+        return;
+    }
+
+    const customersByDept = filteredCustomers.reduce((acc, customer) => {
+        const dept = customer.department || '미지정';
+        if (!acc[dept]) acc[dept] = [];
+        acc[dept].push(customer);
+        return acc;
+    }, {});
         let reportHtml = '';
         const sortedDepts = Object.keys(customersByDept).sort();
         sortedDepts.forEach(dept => {
