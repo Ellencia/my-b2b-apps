@@ -63,7 +63,7 @@ function dragEnd(e, onDragEnd) {
 
     if (timeElapsed < TIME_THRESHOLD && distanceMoved < CLICK_THRESHOLD) {
         const customerId = e.target.closest('.pc-item').dataset.id;
-        window.location.href = `../ipmanager/index.html#customer-${customerId}`;
+        window.location.href = `../ipmanager/ipmanager.html#customer-${customerId}`;
     }
 
     if (onDragEnd) {
