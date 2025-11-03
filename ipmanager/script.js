@@ -16,6 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const customerFormContainer = document.getElementById('customer-form-container');
     const departmentInput = document.getElementById('customer-department'); // ▼ [추가]
     const departmentResultsEl = document.getElementById('department-autocomplete-results'); // ▼ [추가]
+    const workerNameInput = document.getElementById('worker-name'); // ▼ [추가]
+    const workerResultsEl = document.getElementById('worker-autocomplete-results'); // ▼ [추가]
     const customerListContainer = document.getElementById('customer-list-container');
     const customerDetailsContainer = document.getElementById('customer-details-container');
     const presetManagerContainer = document.getElementById('preset-manager-container');
@@ -50,11 +52,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let customers = JSON.parse(localStorage.getItem(getKey('customers'))) || [];
     let printerPresets = JSON.parse(localStorage.getItem(getKey('printerPresets'))) || [];
     let departmentPresets = JSON.parse(localStorage.getItem(getKey('departmentPresets'))) || [];
+    let workerNames = JSON.parse(localStorage.getItem(getKey('workerNames'))) || []; // ▼ [추가]
 
     const saveData = (key, data) => localStorage.setItem(getKey(key), JSON.stringify(data));
     const saveCustomers = () => saveData('customers', customers);
     const savePresets = () => saveData('printerPresets', printerPresets);
     const saveDepartmentPresets = () => saveData('departmentPresets', departmentPresets);
+    const saveWorkerNames = () => saveData('workerNames', workerNames); // ▼ [추가]
 
     // --- 데이터 마이그레이션 ---
     const migrateData = () => {};
@@ -240,7 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
             departmentPresetManagerContainer.style.display = 'block';
         }
     };
-    // 제출 폼
+    // 제출 폼 표시하기
     const showForm = (customer = null) => {
         customerForm.reset();
         printerFormList.innerHTML = '';
@@ -248,6 +252,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // ▼ [수정] datalist 코드 삭제, 자동완성 div 초기화
         departmentResultsEl.innerHTML = '';
         departmentResultsEl.classList.remove('show');
+        
+        // ▼ [추가] 작업자 자동완성 div 초기화
+        workerResultsEl.innerHTML = '';
+        workerResultsEl.classList.remove('show');
         
         if (customer) {
             formTitle.textContent = '고객 정보 수정';
@@ -292,8 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
             formTitle.textContent = '새 고객 추가';
             customerIdInput.value = '';
             pcIdInput.value = ''; // Clear PC ID for new customer
-            // --- ▼ [수정] 새 고객 폼의 상태 초기화 (기능 3) ▼ ---
-            document.getElementById('status-none').checked = true;
+            document.getElementById('status-none').checked = true; // 새 고객 폼의 상태 초기화 (기능 3)
         }
         showPage('form');
     };
@@ -339,8 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderCustomers();
     });
 
-// --- ▼ [교체] 부서 자동완성 로직 ---
-
+    // ▼ 부서 자동완성 로직
     // (공용 함수) 부서 이름으로 네트워크 정보 채우기
     const triggerDepartmentAutofill = (departmentName) => {
         const preset = departmentPresets.find(p => p.name === departmentName);
@@ -393,7 +399,48 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- ▲ [교체] ---
+    // ▼ 작업자 이름 자동완성 로직
+    // (공용 함수) 작업자 자동완성 목록 표시/필터링
+    const showWorkerAutocomplete = (filter = '') => {
+        const lowerFilter = filter.toLowerCase();
+        // workerNames는 문자열 배열이므로 필터링이 더 간단함
+        const filteredNames = workerNames.filter(name => 
+            name.toLowerCase().includes(lowerFilter)
+        );
+
+        // 정렬: 최근 사용한 이름이 위로 오도록 (배열의 뒤쪽)
+        filteredNames.reverse(); 
+
+        if (filteredNames.length === 0) {
+            workerResultsEl.classList.remove('show');
+            return;
+        }
+
+        workerResultsEl.innerHTML = filteredNames.map(name => 
+            `<div class="autocomplete-item" data-name="${name}">${name}</div>`
+        ).join('');
+        workerResultsEl.classList.add('show');
+    };
+
+    // 1. 작업자 입력창에 타이핑할 때: 목록 필터링
+    workerNameInput.addEventListener('input', () => {
+        showWorkerAutocomplete(workerNameInput.value);
+    });
+
+    // 2. 작업자 입력창을 '포커스'할 때: 전체 목록 표시
+    workerNameInput.addEventListener('focus', () => {
+        showWorkerAutocomplete(''); // 전체 목록 표시
+    });
+
+    // 3. 자동완성 목록(@)을 클릭(터치)할 때
+    workerResultsEl.addEventListener('click', (e) => {
+        const item = e.target.closest('.autocomplete-item');
+        if (item && item.dataset.name) {
+            const selectedName = item.dataset.name;
+            workerNameInput.value = selectedName;          // 1. 입력창에 값 채우기
+            workerResultsEl.classList.remove('show'); // 2. 목록 숨기기
+        }
+    });
 
     const restoreStatusContainer = document.getElementById('restore-status-container');
     const hasBackupCheckbox = document.getElementById('has-backup');
@@ -413,6 +460,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // --- ▼ [추가] 유효성 검사 (기능 4) ▼ ---
         const customerName = document.getElementById('customer-name').value.trim(); // 이름(앞뒤 공백 제거)
+        const departmentName = document.getElementById('customer-department').value.trim(); // ▼ [추가]
+        const workerName = workerNameInput.value.trim(); // ▼ [추가]
         const ipAddress = document.getElementById('ip-address').value;
         const pcId = pcIdInput.value;
 
@@ -467,22 +516,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         if (newPresetsAdded) savePresets();
 
-        // --- ▼ [수정] 상태 라디오 버튼 값 읽기 (기능 3) ▼ ---
+        // --- 상태 라디오 버튼 값 읽기 (기능 3) ▼ ---
         const selectedStatus = document.querySelector('input[name="status-group"]:checked').value;
 
         const customerData = {
             id: customerIdInput.value ? parseInt(customerIdInput.value) : Date.now(),
             createdAt: customerIdInput.value ? customers.find(c => c.id == customerIdInput.value).createdAt : Date.now(), // Add creation timestamp
-            name: customerName, // ▼ [수정] trim 처리된 변수 사용
-            workerName: document.getElementById('worker-name').value, // Store worker name
+            name: customerName, // trim 처리된 변수 사용
+            workerName: workerName, // ▼ [수정] trim 처리된 변수 사용
             pcId: pcIdInput.value, // Store PC ID
-            department: document.getElementById('customer-department').value,
+            department: departmentName, // 공백 제거된 변수 사용
             
-            // --- ▼ [수정] 상태 저장 로직 (기능 3) ▼ ---
+            // --- 상태 저장 로직 (기능 3) ▼ ---
             isCompleted: selectedStatus === 'completed',
             isPending: selectedStatus === 'pending',
             isError: selectedStatus === 'error',
-            // --- ▲ [수정] ▲ ---
 
             hasBackup: document.getElementById('has-backup').checked,
             isRestored: document.getElementById('has-backup').checked ? document.getElementById('is-restored').checked : false,
@@ -494,6 +542,48 @@ document.addEventListener('DOMContentLoaded', () => {
             backupNotes: document.getElementById('backup-notes').value,
             printers: printers
         };
+
+        // --- 새 부서 자동 저장 로직 ---
+        if (departmentName) { // 1. 부서 이름이 비어있지 않고,
+            const isNewDepartment = !departmentPresets.some(p => p.name.toLowerCase() === departmentName.toLowerCase());
+            
+            if (isNewDepartment) { // 2. 프리셋에 없는 새 부서 이름이라면,
+
+                // --- ▼ [추가] 현재 폼의 네트워크 값 읽어오기 ---
+                const currentGateway = document.getElementById('gateway').value;
+                const currentDns1 = document.getElementById('dns1').value;
+                const currentDns2 = document.getElementById('dns2').value;
+
+                // 게이트웨이 처리 (마지막 . 뒷부분 제거. 예: 192.168.0.254 -> 192.168.0.)
+                let processedGateway = '';
+                const lastDotIndex = currentGateway.lastIndexOf('.');
+                if (currentGateway && lastDotIndex !== -1) {
+                    processedGateway = currentGateway.substring(0, lastDotIndex + 1);
+                }
+
+                // 3. 새 프리셋 객체 생성
+                const newPreset = {
+                    id: Date.now(),
+                    name: departmentName,
+                    gateway: processedGateway, // 네트워크 정보는 비워둠 (나중에 수정 가능)
+                    dns1: currentDns1,
+                    dns2: currentDns2
+                };
+                departmentPresets.push(newPreset); // 4. 프리셋 배열에 추가
+                saveDepartmentPresets(); // 5. LocalStorage에 저장
+            }
+        }
+
+        // --- ▼ 새 작업자 이름 자동 저장 로직 ---
+        if (workerName) { // 1. 작업자 이름이 비어있지 않고,
+            const isNewWorker = !workerNames.some(name => name.toLowerCase() === workerName.toLowerCase());
+            
+            if (isNewWorker) { // 2. 목록에 없는 새 이름이라면,
+                workerNames.push(workerName); // 3. 배열에 추가
+                saveWorkerNames(); // 4. LocalStorage에 저장
+            }
+        }
+
         const existingIndex = customers.findIndex(c => c.id == customerData.id);
         if (existingIndex > -1) customers[existingIndex] = customerData;
         else customers.push(customerData);
@@ -702,9 +792,13 @@ document.addEventListener('DOMContentLoaded', () => {
             dropdownMenu.classList.remove('show');
         }
 
-        // ▼ [추가] 부서 입력창이나 자동완성 목록 '바깥'을 클릭하면 목록 숨기기
+        // ▼ 부서 입력창이나 자동완성 목록 '바깥'을 클릭하면 목록 숨기기
         if (departmentResultsEl && !departmentResultsEl.contains(e.target) && !departmentInput.contains(e.target)) {
             departmentResultsEl.classList.remove('show');
+        }
+        // ▼ 작업자 자동완성 목록 '바깥'을 클릭하면 목록 숨기기
+        if (workerResultsEl && !workerResultsEl.contains(e.target) && !workerNameInput.contains(e.target)) {
+            workerResultsEl.classList.remove('show');
         }
     });
 
