@@ -14,6 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const departmentFilter = document.getElementById('department-filter');
     const sortOrderFilter = document.getElementById('sort-order-filter'); // 추가
     const customerFormContainer = document.getElementById('customer-form-container');
+    const departmentInput = document.getElementById('customer-department'); // ▼ [추가]
+    const departmentResultsEl = document.getElementById('department-autocomplete-results'); // ▼ [추가]
     const customerListContainer = document.getElementById('customer-list-container');
     const customerDetailsContainer = document.getElementById('customer-details-container');
     const presetManagerContainer = document.getElementById('preset-manager-container');
@@ -243,9 +245,10 @@ document.addEventListener('DOMContentLoaded', () => {
         customerForm.reset();
         printerFormList.innerHTML = '';
 
-        const departmentDatalist = document.getElementById('department-presets-list');
-        departmentDatalist.innerHTML = departmentPresets.map(p => `<option value="${p.name}"></option>`).join('');
-
+        // ▼ [수정] datalist 코드 삭제, 자동완성 div 초기화
+        departmentResultsEl.innerHTML = '';
+        departmentResultsEl.classList.remove('show');
+        
         if (customer) {
             formTitle.textContent = '고객 정보 수정';
             customerIdInput.value = customer.id;
@@ -336,15 +339,61 @@ document.addEventListener('DOMContentLoaded', () => {
         renderCustomers();
     });
 
-    document.getElementById('customer-department').addEventListener('input', (e) => {
-        const departmentName = e.target.value.trim();
+// --- ▼ [교체] 부서 자동완성 로직 ---
+
+    // (공용 함수) 부서 이름으로 네트워크 정보 채우기
+    const triggerDepartmentAutofill = (departmentName) => {
         const preset = departmentPresets.find(p => p.name === departmentName);
         if (preset) {
             document.getElementById('gateway').value = preset.gateway || '';
             document.getElementById('dns1').value = preset.dns1 || '';
             document.getElementById('dns2').value = preset.dns2 || '';
         }
+    };
+
+    // (공용 함수) 자동완성 목록 표시/필터링
+    const showDepartmentAutocomplete = (filter = '') => {
+        const lowerFilter = filter.toLowerCase();
+        const filteredPresets = departmentPresets.filter(p => 
+            p.name.toLowerCase().includes(lowerFilter)
+        );
+
+        if (filteredPresets.length === 0) {
+            departmentResultsEl.classList.remove('show');
+            return;
+        }
+
+        departmentResultsEl.innerHTML = filteredPresets.map(p => 
+            // data-name 속성에 정확한 프리셋 이름을 저장
+            `<div class="autocomplete-item" data-name="${p.name}">${p.name}</div>`
+        ).join('');
+        departmentResultsEl.classList.add('show');
+    };
+
+    // 1. 부서 입력창에 타이핑할 때: 목록 필터링 + 자동완성 시도
+    departmentInput.addEventListener('input', () => {
+        const currentName = departmentInput.value;
+        showDepartmentAutocomplete(currentName); // 목록 필터링
+        triggerDepartmentAutofill(currentName.trim()); // 타이핑 중에도 자동완성 시도
     });
+
+    // 2. 부서 입력창을 '포커스'할 때 (모바일에서 중요): 전체 목록 표시
+    departmentInput.addEventListener('focus', () => {
+        showDepartmentAutocomplete(''); // 빈 값으로 검색 = 전체 목록 표시
+    });
+
+    // 3. 자동완성 목록(@)을 클릭(터치)할 때
+    departmentResultsEl.addEventListener('click', (e) => {
+        const item = e.target.closest('.autocomplete-item');
+        if (item && item.dataset.name) {
+            const selectedName = item.dataset.name;
+            departmentInput.value = selectedName;          // 1. 입력창에 값 채우기
+            triggerDepartmentAutofill(selectedName);       // 2. 네트워크 정보 채우기
+            departmentResultsEl.classList.remove('show'); // 3. 목록 숨기기
+        }
+    });
+
+    // --- ▲ [교체] ---
 
     const restoreStatusContainer = document.getElementById('restore-status-container');
     const hasBackupCheckbox = document.getElementById('has-backup');
@@ -651,6 +700,11 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('click', (e) => {
         if (dropdownMenu && !dropdownMenu.contains(e.target) && !menuToggleBtn.contains(e.target)) {
             dropdownMenu.classList.remove('show');
+        }
+
+        // ▼ [추가] 부서 입력창이나 자동완성 목록 '바깥'을 클릭하면 목록 숨기기
+        if (departmentResultsEl && !departmentResultsEl.contains(e.target) && !departmentInput.contains(e.target)) {
+            departmentResultsEl.classList.remove('show');
         }
     });
 
