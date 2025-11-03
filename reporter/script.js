@@ -85,6 +85,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- CSV 내보내기 함수 ---
     const exportToCsv = (filename, data) => {
         const header = ['작업일', '부서', '이름', 'PC ID', 'IP 주소', '상태', '작업자', '비고'];
+        
+        // --- ⬇️ [수정] CSV 필드 처리 헬퍼 함수 ---
+        const sanitizeField = (field) => {
+            let str = String(field || ''); // 1. null/undefined를 빈 문자열로 처리
+
+            // 2. 필드 내의 큰따옴표를 2개로 이스케이프
+            str = str.replace(/"/g, '""');
+
+            // 3. 필드에 쉼표, 줄바꿈, 또는 큰따옴표가 포함된 경우
+            //    필드 전체를 큰따옴표로 감싸줌
+            if (str.includes(',') || str.includes('\n') || str.includes('\r') || str.includes('"')) {
+                str = `"${str}"`;
+            }
+            return str;
+        };
+        // --- ⬆️ [수정] 여기까지 ---
+
         const csvRows = [header.join(',')];
     
         data.forEach(row => {
@@ -96,10 +113,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     row.ip,
                     row.status,
                     row.workername,
-                    row.backupNotes
+                    row.backupNotes // <-- 문제의 원인이 되는 '비고' 필드
                 ];
-                csvRows.push(values.join(','));
+
+                // --- ⬇️ [수정] 각 값을 sanitizeField 함수로 처리한 후 join ---
+                const processedValues = values.map(sanitizeField);
+                csvRows.push(processedValues.join(','));
+                // --- ⬆️ [수정] ---
             });
+
+        // (이하 동일)
         const csvString = csvRows.join('\r\n');
         const blob = new Blob(['\uFEFF' + csvString], { type: 'text/csv;charset=utf-8;' });
 
@@ -114,7 +137,6 @@ document.addEventListener('DOMContentLoaded', () => {
             document.body.removeChild(link);
         }
     };
-
 
     // --- 날짜 필터 이벤트 핸들러 ---
     dateFilterInput.addEventListener('change', (e) => {
@@ -160,5 +182,3 @@ document.addEventListener('DOMContentLoaded', () => {
     generateReport();
 
 }); // <-- DOMContentLoaded 리스너가 여기서 닫힙니다.
-
-// (맨 마지막에 있던 불필요한 generateReport() 와 }); 는 삭제합니다.)

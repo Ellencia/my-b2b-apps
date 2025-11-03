@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const addCustomerFAB = document.getElementById('add-customer-fab');
     const searchInput = document.getElementById('search-input');
     const departmentFilter = document.getElementById('department-filter');
+    const sortOrderFilter = document.getElementById('sort-order-filter'); // 추가
     const customerFormContainer = document.getElementById('customer-form-container');
     const customerListContainer = document.getElementById('customer-list-container');
     const customerDetailsContainer = document.getElementById('customer-details-container');
@@ -60,18 +61,50 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderCustomers = () => {
         const searchTerm = searchInput.value.toLowerCase();
         const selectedDept = departmentFilter.value;
+
+        // --- ▼ [수정] 검색 로직 (기능 1) ▼ ---
         const filteredCustomers = customers.filter(c => {
             const nameMatch = c.name.toLowerCase().includes(searchTerm);
+            const ipMatch = (c.ip || '').toLowerCase().includes(searchTerm);
+            const pcIdMatch = (c.pcId || '').toLowerCase().includes(searchTerm);
+            const workerNameMatch = (c.workerName || '').toLowerCase().includes(searchTerm);
+            const searchMatch = nameMatch || ipMatch || pcIdMatch || workerNameMatch;
+
             const deptMatch = !selectedDept || c.department === selectedDept;
-            return nameMatch && deptMatch;
+            return searchMatch && deptMatch;
         });
-        customerCountSpan.textContent = `(${filteredCustomers.length}명)`;
+        // --- ▲ [수정] ▲ ---
+
+        // --- ▼ [추가] 정렬 로직 (기능 2) ▼ ---
+        const sortOrder = sortOrderFilter.value;
+        let sortedCustomers = [...filteredCustomers]; // 정렬을 위해 배열 복사
+        if (sortOrder === 'oldest') {
+            // 오래된순 (createdAt 오름차순)
+            sortedCustomers.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+        } else if (sortOrder === 'latest') {
+            // 최신순 (createdAt 타임스탬프 기준, 내림차순)
+            sortedCustomers.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        } else if (sortOrder === 'name-asc') {
+            // 이름 (오름차순)
+            sortedCustomers.sort((a, b) => a.name.localeCompare(b.name));
+        } else if (sortOrder === 'department-asc') {
+            // 부서 (오름차순), 부서 같으면 이름순
+            sortedCustomers.sort((a, b) => {
+                const deptCompare = (a.department || '').localeCompare(b.department || '');
+                if (deptCompare !== 0) return deptCompare;
+                return a.name.localeCompare(b.name);
+            });
+        }
+
+        customerCountSpan.textContent = `(${sortedCustomers.length}명)`; // sortedCustomers 사용
         customerListEl.innerHTML = '';
-        if (filteredCustomers.length === 0) {
+        if (sortedCustomers.length === 0) { // sortedCustomers 사용
             customerListEl.innerHTML = '<li>표시할 고객 정보가 없습니다.</li>';
             return;
         }
-        filteredCustomers.forEach(c => {
+        
+        // sortedCustomers를 사용해 목록 렌더링
+        sortedCustomers.forEach(c => { 
             const li = document.createElement('li');
             if (c.isCompleted) {
                 li.classList.add('customer-list-completed');
@@ -226,9 +259,17 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('dns1').value = customer.dns1;
             document.getElementById('dns2').value = customer.dns2;
             document.getElementById('backup-notes').value = customer.backupNotes;
-            document.getElementById('is-completed').checked = customer.isCompleted || false;
-            document.getElementById('is-pending-update').checked = customer.isPending || false;
-            document.getElementById('is-error-state').checked = customer.isError || false;
+
+            // --- ▼ [수정] 상태 라디오 버튼 로딩 (기능 3) ▼ ---
+            if (customer.isCompleted) {
+                document.getElementById('status-completed').checked = true;
+            } else if (customer.isPending) {
+                document.getElementById('status-pending').checked = true;
+            } else if (customer.isError) {
+                document.getElementById('status-error').checked = true;
+            } else {
+                document.getElementById('status-none').checked = true; // 기본값
+            }
 
             // 백업 및 원복 상태 처리
             const hasBackup = customer.hasBackup || false;
@@ -248,8 +289,8 @@ document.addEventListener('DOMContentLoaded', () => {
             formTitle.textContent = '새 고객 추가';
             customerIdInput.value = '';
             pcIdInput.value = ''; // Clear PC ID for new customer
-            document.getElementById('is-pending-update').checked = false;
-            document.getElementById('is-error-state').checked = false;
+            // --- ▼ [수정] 새 고객 폼의 상태 초기화 (기능 3) ▼ ---
+            document.getElementById('status-none').checked = true;
         }
         showPage('form');
     };
@@ -289,6 +330,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     searchInput.addEventListener('input', renderCustomers);
+    sortOrderFilter.addEventListener('change', renderCustomers); // 추가
     departmentFilter.addEventListener('change', () => {
         localStorage.setItem(getKey('selectedDepartment'), departmentFilter.value);
         renderCustomers();
@@ -319,6 +361,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
     customerForm.addEventListener('submit', (e) => {
         e.preventDefault();
+
+        // --- ▼ [추가] 유효성 검사 (기능 4) ▼ ---
+        const customerName = document.getElementById('customer-name').value.trim(); // 이름(앞뒤 공백 제거)
+        const ipAddress = document.getElementById('ip-address').value;
+        const pcId = pcIdInput.value;
+
+        // 1. IP 주소 유효성 검사 (필수)
+        if (!customerName) {
+            alert('고객 이름은 필수 항목입니다.');
+            document.getElementById('customer-name').focus();
+            return; // 저장 중단
+        }
+        // 0-255 사이의 숫자 4개로 이루어진 형식인지 확인
+        const ipRegex = /^(?:(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+        // ▼ [수정] ipAddress가 비어있지 않을 때만 검사
+        if (ipAddress && !ipRegex.test(ipAddress)) {
+            alert('IP 주소 형식이 올바르지 않습니다. (예: 192.168.0.1)');
+            document.getElementById('ip-address').focus();
+            return; // 저장 중단
+        }
+
+        // 2. PC ID 유효성 검사 (선택 사항, 하지만 입력 시 숫자여야 함)
+        if (pcId && !/^\d+$/.test(pcId)) {
+            alert('PC ID는 숫자만 입력해야 합니다.');
+            pcIdInput.focus();
+            return; // 저장 중단
+        }
+
         let newPresetsAdded = false;
         const printers = Array.from(document.querySelectorAll('.printer-item')).map(item => {
             const printerData = {
@@ -348,19 +418,26 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         if (newPresetsAdded) savePresets();
 
+        // --- ▼ [수정] 상태 라디오 버튼 값 읽기 (기능 3) ▼ ---
+        const selectedStatus = document.querySelector('input[name="status-group"]:checked').value;
+
         const customerData = {
             id: customerIdInput.value ? parseInt(customerIdInput.value) : Date.now(),
             createdAt: customerIdInput.value ? customers.find(c => c.id == customerIdInput.value).createdAt : Date.now(), // Add creation timestamp
-            name: document.getElementById('customer-name').value,
+            name: customerName, // ▼ [수정] trim 처리된 변수 사용
             workerName: document.getElementById('worker-name').value, // Store worker name
             pcId: pcIdInput.value, // Store PC ID
             department: document.getElementById('customer-department').value,
-            isCompleted: document.getElementById('is-completed').checked,
-            isPending: document.getElementById('is-pending-update').checked,
-            isError: document.getElementById('is-error-state').checked,
+            
+            // --- ▼ [수정] 상태 저장 로직 (기능 3) ▼ ---
+            isCompleted: selectedStatus === 'completed',
+            isPending: selectedStatus === 'pending',
+            isError: selectedStatus === 'error',
+            // --- ▲ [수정] ▲ ---
+
             hasBackup: document.getElementById('has-backup').checked,
             isRestored: document.getElementById('has-backup').checked ? document.getElementById('is-restored').checked : false,
-            ip: document.getElementById('ip-address').value,
+            ip: document.getElementById('ip-address').value, // 유효성 검사 완료된 값
             subnet: document.getElementById('subnet-mask').value,
             gateway: document.getElementById('gateway').value,
             dns1: document.getElementById('dns1').value,

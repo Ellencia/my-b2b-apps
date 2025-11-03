@@ -23,12 +23,20 @@
     </header>
 
     <main>
-        <div id="customer-list-container" class="page">
+        <div id="customer-list-container" class="page">            
             <h2>고객 목록 <span id="customer-count"></span></h2>
+            
             <div class="filter-container">
-                <input type="text" id="search-input" placeholder="고객 이름 검색...">
+                <input type="text" id="search-input" placeholder="이름, IP, PC ID, 작업자 검색...">
                 <select id="department-filter"></select>
-            </div>
+                <select id="sort-order-filter">
+                    <option value="oldest">오래된순</option> 
+                    <option value="latest">최신순</option>
+                    <option value="name-asc">이름 (오름차순)</option>
+                    <option value="department-asc">부서 (오름차순)</option>
+                </select>
+                </div>
+
             <ul id="customer-list"></ul>
         </div>
 
@@ -53,13 +61,13 @@
                 </div>
                 <div class="form-group">
                     <label for="pc-id">PC ID</label>
-                    <input type="text" id="pc-id" required inputmode="numeric">
+                    <input type="text" id="pc-id" inputmode="numeric">
                 </div>
 
                 <h3>네트워크 정보</h3>
                 <div class="form-group">
                     <label for="ip-address">IP 주소*</label>
-                    <input type="text" id="ip-address" required inputmode="numeric">
+                    <input type="text" id="ip-address" inputmode="numeric">
                 </div>
                 <div class="form-group">
                     <label for="subnet-mask">서브넷 마스크</label>
@@ -80,14 +88,15 @@
 
                 <h3>상태</h3>
                 <div class="form-group form-group-inline">
-                    <input type="checkbox" id="is-completed">
-                    <label for="is-completed">완료</label>
-                    <input type="checkbox" id="is-pending-update" style="margin-left: 20px;">
-                    <label for="is-pending-update">보류</label>
-                    <input type="checkbox" id="is-error-state" style="margin-left: 20px;">
-                    <label for="is-error-state">불가</label>
+                    <input type="radio" id="status-none" name="status-group" value="none" checked>
+                    <label for="status-none">없음</label>
+                    <input type="radio" id="status-completed" name="status-group" value="completed" style="margin-left: 20px;">
+                    <label for="status-completed">완료</label>
+                    <input type="radio" id="status-pending" name="status-group" value="pending" style="margin-left: 20px;">
+                    <label for="status-pending">보류</label>
+                    <input type="radio" id="status-error" name="status-group" value="error" style="margin-left: 20px;">
+                    <label for="status-error">불가</label>
                 </div>
-
                 <div class="form-group-inline" style="margin-bottom: 1rem;">
                     <label style="font-weight: bold;">백업 및 원복:</label>
                     <input type="checkbox" id="has-backup" style="margin-left: 10px;">

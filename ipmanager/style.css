@@ -100,12 +100,12 @@ main {
 
 .filter-container {
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: 1fr auto auto; /* 3열로 변경 */
     gap: 0.5rem;
     margin-bottom: 1rem;
 }
 
-#search-input, #department-filter {
+#search-input, #department-filter, #sort-order-filter { /* #sort-order-filter 추가 */
     width: 100%;
     padding: 0.75rem;
     border: 1px solid #ced4da;
@@ -172,11 +172,13 @@ main {
     gap: 0.5rem;
 }
 
-.form-group-inline input[type="checkbox"] {
+.form-group-inline input[type="checkbox"],
+.form-group-inline input[type="radio"] {
     width: auto;
 }
 
 .form-group-inline label {
+    display: inline-block; /* ▼ [추가] display: block 속성을 덮어쓰기 */
     margin-bottom: 0;
     font-weight: normal;
 }
