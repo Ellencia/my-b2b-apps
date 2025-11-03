@@ -3,7 +3,7 @@ import { dom } from './dom.js';
 import { initHeader } from './header.js';
 import { initDepartmentMode } from './departmentMode.js';
 import { initIntegratedMode } from './integratedMode.js';
-import { initUiControls } from './uiControl.js';
+import { initIntegratedModeUI, destroyIntegratedModeUI } from './uiControl.js';
 
 // 1. Check for profile on initial load
 if (!state.currentProfile) {
@@ -16,6 +16,11 @@ if (!state.currentProfile) {
 
 // 2. Main App Rendering Logic
 function renderApp() {
+
+    // ▼ [추가] 모드 변경 시, 이전 모드의 UI 핸들러(Panzoom)를 정리
+    destroyIntegratedModeUI();
+    // (부서 모드는 정리할 UI 핸들러가 없으므로 Panzoom 정리만 호출)
+    
     if (state.viewMode === 'department') {
         dom.departmentModeControls.style.display = 'flex';
         dom.integratedModeControls.style.display = 'none';
@@ -26,6 +31,7 @@ function renderApp() {
         dom.integratedModeControls.style.display = 'block';
         document.querySelector('main').classList.add('integrated-mode');
         initIntegratedMode();
+        initIntegratedModeUI(); // ▼ [추가] 통합 모드일 때만 Panzoom 초기화
     }
 }
 
@@ -44,7 +50,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize header and UI controls
     initHeader();
-    initUiControls();
 
     // Add mode change listeners
     dom.changeModeBtnDept.addEventListener('click', handleModeChange);

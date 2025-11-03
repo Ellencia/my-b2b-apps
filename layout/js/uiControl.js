@@ -121,74 +121,58 @@ export function onIntegratedDragEnd(element) {
 
 // --- Zoom & Pan --- //
 
-function applyZoom(newZoom) {
-    const oldZoom = state.zoomLevel;
-    const viewportCenterX = dom.layoutContainerWrapper.clientWidth / 2;
-    const viewportCenterY = dom.layoutContainerWrapper.clientHeight / 2;
-    const canvasX = (dom.layoutContainerWrapper.scrollLeft + viewportCenterX) / oldZoom;
-    const canvasY = (dom.layoutContainerWrapper.scrollTop + viewportCenterY) / oldZoom;
+let panzoomInstance = null;
+/**
+ * 통합 모드 UI (Panzoom)를 초기화합니다.
+ */
+export function initIntegratedModeUI() {
+    // 1. Panzoom 인스턴스 생성
+    panzoomInstance = Panzoom(dom.layoutContainer, {
+        canvas: true, // layoutContainer가 wrapper보다 큼
+        maxScale: 3,
+        minScale: 0.2,
+        step: 0.1, // 줌 버튼용 스텝
+        // ★★★ 중요 ★★★
+        // '.pc-item'에서 시작된 드래그는 맵 패닝을 무시합니다.
+        // 이를 통해 기존의 makeDraggable이 정상 동작합니다.
+        exclude: ['.pc-item'] 
+    });
 
-    updateState({ zoomLevel: newZoom });
-    dom.layoutContainer.style.transform = `scale(${state.zoomLevel})`;
-    dom.zoomResetBtn.textContent = `${Math.round(state.zoomLevel * 100)}%`;
+    // 2. Panzoom의 휠 이벤트를 wrapper에 연결
+    dom.layoutContainerWrapper.addEventListener('wheel', (event) => {
+        if (!panzoomInstance) return;
+        // Panzoom의 내장 휠 핸들러 호출
+        panzoomInstance.zoomWithWheel(event);
+    }, { passive: false });
 
-    const newScrollLeft = (canvasX * state.zoomLevel) - viewportCenterX;
-    const newScrollTop = (canvasY * state.zoomLevel) - viewportCenterY;
-    dom.layoutContainerWrapper.scrollTo(newScrollLeft, newScrollTop);
+    // 3. 줌 버튼 연결
+    dom.zoomInBtn.addEventListener('click', () => panzoomInstance && panzoomInstance.zoomIn());
+    dom.zoomOutBtn.addEventListener('click', () => panzoomInstance && panzoomInstance.zoomOut());
+    dom.zoomResetBtn.addEventListener('click', () => panzoomInstance && panzoomInstance.zoom(1, { animate: true }));
+
+    // 4. Panzoom의 'zoom' 이벤트를 감지하여 state와 UI 업데이트
+    dom.layoutContainer.addEventListener('panzoomzoom', (event) => {
+        const newZoom = event.detail.scale;
+        updateState({ zoomLevel: newZoom });
+        dom.zoomResetBtn.textContent = `${Math.round(newZoom * 100)}%`;
+    });
 }
 
-function handleWheelZoom(e) {
-    if (e.ctrlKey) {
-        e.preventDefault();
-        let newZoom = state.zoomLevel;
-        if (e.deltaY < 0) { // wheel up, zoom in
-            newZoom = Math.min(3, state.zoomLevel + 0.1);
-        } else { // wheel down, zoom out
-            newZoom = Math.max(0.2, state.zoomLevel - 0.1);
-        }
-        applyZoom(newZoom);
+/**
+ * 통합 모드 UI (Panzoom)를 파괴합니다.
+ * (부서 모드로 전환 시, 이벤트 리스너 중복 방지)
+ */
+export function destroyIntegratedModeUI() {
+    if (panzoomInstance) {
+        panzoomInstance.destroy();
+        panzoomInstance = null;
     }
-}
-
-let panState = { isPanning: false, startX: 0, startY: 0, scrollLeft: 0, scrollTop: 0 };
-
-function handlePanStart(e) {
-    if (e.target.closest('.pc-item')) return;
-    panState.isPanning = true;
-    dom.layoutContainerWrapper.style.cursor = 'grabbing';
-    panState.startX = e.pageX - dom.layoutContainerWrapper.offsetLeft;
-    panState.startY = e.pageY - dom.layoutContainerWrapper.offsetTop;
-    panState.scrollLeft = dom.layoutContainerWrapper.scrollLeft;
-    panState.scrollTop = dom.layoutContainerWrapper.scrollTop;
-
-    document.addEventListener('mousemove', handlePanMove);
-    document.addEventListener('mouseup', handlePanEnd);
-}
-
-function handlePanMove(e) {
-    if (!panState.isPanning) return;
-    e.preventDefault();
-    const x = e.pageX - dom.layoutContainerWrapper.offsetLeft;
-    const y = e.pageY - dom.layoutContainerWrapper.offsetTop;
-    const walkX = x - panState.startX;
-    const walkY = y - panState.startY;
-    dom.layoutContainerWrapper.scrollLeft = panState.scrollLeft - walkX;
-    dom.layoutContainerWrapper.scrollTop = panState.scrollTop - walkY;
-}
-
-function handlePanEnd() {
-    panState.isPanning = false;
-    dom.layoutContainerWrapper.style.cursor = 'default';
-    document.removeEventListener('mousemove', handlePanMove);
-    document.removeEventListener('mouseup', handlePanEnd);
-}
-
-export function initUiControls() {
-    dom.zoomInBtn.addEventListener('click', () => applyZoom(Math.min(3, state.zoomLevel + 0.1)));
-    dom.zoomOutBtn.addEventListener('click', () => applyZoom(Math.max(0.2, state.zoomLevel - 0.1)));
-    dom.zoomResetBtn.addEventListener('click', () => applyZoom(1));
-    dom.layoutContainerWrapper.addEventListener('wheel', handleWheelZoom, { passive: false });
-    dom.layoutContainerWrapper.addEventListener('mousedown', handlePanStart);
+    
+    // 버튼 이벤트 리스너를 확실히 제거하기 위해 버튼을 복제/교체합니다.
+    // (이벤트 리스너 중복 등록 방지)
+    dom.zoomInBtn.replaceWith(dom.zoomInBtn.cloneNode(true));
+    dom.zoomOutBtn.replaceWith(dom.zoomOutBtn.cloneNode(true));
+    dom.zoomResetBtn.replaceWith(dom.zoomResetBtn.cloneNode(true));
 }
 
 export function centerViewOnLogicalOrigin(coordinate_offset) {
