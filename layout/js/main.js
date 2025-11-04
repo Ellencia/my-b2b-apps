@@ -3,7 +3,6 @@ import { dom } from './dom.js';
 import { initHeader } from './header.js';
 import { initDepartmentMode } from './departmentMode.js';
 import { initIntegratedMode } from './integratedMode.js';
-import { initIntegratedModeUI, destroyIntegratedModeUI } from './uiControl.js';
 
 // 1. Check for profile on initial load
 if (!state.currentProfile) {
@@ -16,14 +15,13 @@ if (!state.currentProfile) {
 
 // 2. Main App Rendering Logic
 function renderApp() {
-    destroyIntegratedModeUI();
+    // destroyIntegratedModeUI(); // ▼ [삭제]
+
+    // ▼ [수정] 모드와 상관없이 줌 레벨 1로 고정
+    updateState({ zoomLevel: 1 }); 
+    dom.layoutContainer.style.transform = 'scale(1)';
 
     if (state.viewMode === 'department') {
-        // ▼ [추가] 부서 모드 진입 시 줌 레벨과 CSS 강제 리셋
-        updateState({ zoomLevel: 1 });
-        dom.layoutContainer.style.transform = 'scale(1)';
-        // ▲ [추가]
-
         dom.departmentModeControls.style.display = 'flex';
         dom.integratedModeControls.style.display = 'none';
         document.querySelector('main').classList.remove('integrated-mode');
@@ -33,7 +31,7 @@ function renderApp() {
         dom.integratedModeControls.style.display = 'block';
         document.querySelector('main').classList.add('integrated-mode');
         initIntegratedMode();
-        initIntegratedModeUI(); 
+        // initIntegratedModeUI(); // ▼ [삭제]
     }
 }
 // 3. Mode Switching

@@ -23,9 +23,7 @@ export const dom = {
     manageLayoutsBtn: document.getElementById('manage-layouts-btn'),
     departmentFocusSelect: document.getElementById('department-focus-select'),
     toggleDeptNamesBtn: document.getElementById('toggle-dept-names-btn'),
-    zoomInBtn: document.getElementById('zoom-in-btn'),
-    zoomOutBtn: document.getElementById('zoom-out-btn'),
-    zoomResetBtn: document.getElementById('zoom-reset-btn'),
+    saveLayoutBtnIntegrated: document.getElementById('save-layout-btn-integrated'),
 
     // Modal
     manageLayoutsModal: document.getElementById('manage-layouts-modal'),

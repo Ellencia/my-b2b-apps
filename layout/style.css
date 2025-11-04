@@ -163,12 +163,12 @@ main {
 
 /* --- Integrated Mode Styles --- */
 .integrated-mode .layout-container-wrapper {
-    overflow: auto; /* Integrated mode: scroll enabled */
+    overflow: hidden; /* ▼ [수정] 스크롤 제거 */
 }
 
 .integrated-mode .layout-container {
-    width: 2000px;
-    height: 2000px;
+    width: 100%;    /* ▼ [수정] 맵 크기 고정 */
+    height: 700px; /* ▼ [수정] 맵 크기 고정 */
 }
 
 /* --- New Integrated Mode Controls --- */
@@ -285,8 +285,7 @@ main {
 }
 
 /* Align buttons to the right */
-#change-mode-btn-integrated,
-.controls-sub > .zoom-controls {
+#change-mode-btn-integrated {
     margin-left: auto;
 }
 

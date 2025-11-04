@@ -1,6 +1,6 @@
 import state, { updateState, saveIntegratedData, validateActiveLayoutId } from './state.js';
 import { dom } from './dom.js';
-import { makeDraggable, onIntegratedDragEnd, centerViewOnLogicalOrigin } from './uiControl.js';
+import { makeDraggable } from './uiControl.js';
 import { COORDINATE_OFFSET, getKey } from './utils.js';
 
 // --- Main Initialization ---
@@ -8,7 +8,6 @@ export function initIntegratedMode() {
     validateActiveLayoutId();
     populateLayoutDropdown();
     renderIntegratedLayout();
-    centerViewOnLogicalOrigin(COORDINATE_OFFSET);
     addEventListeners();
 }
 
@@ -21,6 +20,25 @@ function addEventListeners() {
     dom.layoutManagementList.addEventListener('click', handleLayoutManagementListClick);
     dom.departmentFocusSelect.addEventListener('change', handleLayoutFocusChange);
     dom.toggleDeptNamesBtn.addEventListener('click', toggleDepartmentNames);
+    dom.saveLayoutBtnIntegrated.addEventListener('click', saveIntegratedLayout);
+}
+
+// ▼ [추가] 통합 모드 수동 저장 함수 (departmentMode.js에서 복사)
+function saveIntegratedLayout() {
+    if (!state.activeLayoutId) {
+        alert('저장할 레이아웃을 먼저 선택해주세요.');
+        return;
+    }
+    const layoutData = {};
+    dom.layoutContainer.querySelectorAll('.pc-item').forEach(pcElement => {
+        layoutData[pcElement.dataset.id] = {
+            left: pcElement.style.left,
+            top: pcElement.style.top
+        };
+    });
+    // 키 이름만 `state.activeLayoutId`로 변경
+    localStorage.setItem(getKey(`layout_${state.activeLayoutId}`), JSON.stringify(layoutData));
+    alert('레이아웃이 저장되었습니다!');
 }
 
 // --- UI Rendering ---
@@ -51,7 +69,7 @@ function renderIntegratedLayout() {
 
     customersInLayout.forEach(customer => {
         const pcElement = createPcElement(customer, savedPositions);
-        makeDraggable(pcElement, onIntegratedDragEnd);
+        makeDraggable(pcElement, null);
         dom.layoutContainer.appendChild(pcElement);
     });
 }
@@ -77,8 +95,8 @@ function createPcElement(customer, savedPositions) {
         pcElement.style.left = savedPositions[customer.id].left;
         pcElement.style.top = savedPositions[customer.id].top;
     } else {
-        pcElement.style.left = `${Math.random() * 400 + (COORDINATE_OFFSET - 200)}px`;
-        pcElement.style.top = `${Math.random() * 400 + (COORDINATE_OFFSET - 200)}px`;
+        pcElement.style.left = `${Math.random() * 400}px`;
+        pcElement.style.top = `${Math.random() * 400}px`;
     }
     return pcElement;
 }
@@ -227,7 +245,6 @@ function handleLayoutFocusChange(e) {
     updateState({ activeLayoutId: parseInt(e.target.value) });
     saveIntegratedData();
     renderIntegratedLayout();
-    centerViewOnLogicalOrigin(COORDINATE_OFFSET);
 }
 
 function toggleDepartmentNames() {

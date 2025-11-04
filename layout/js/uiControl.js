@@ -5,13 +5,8 @@ import { getClientCoords, getKey } from './utils.js';
 const CLICK_THRESHOLD = 5;
 const TIME_THRESHOLD = 200;
 let _activeDragElement = null; // saves the currently dragged element
-// --- ▼ [재설계] 줌(Zoom)을 지원하는 새 드래그 로직 ---
-/**
- * 1. 드래그 시작 (pointerdown)
- * Panzoom보다 먼저 이벤트를 '캡처'해서 가로챕니다.
- */
+
 function dragStart(e, onDragEndCallback) {
-    // 1. 이벤트 차단: Panzoom이 맵 패닝을 시작하지 못하게 막음
     e.stopPropagation();
     e.preventDefault();
 
@@ -110,78 +105,4 @@ export function makeDraggable(element, onDragEnd) {
     const start = (e) => dragStart(e, onDragEnd);
     // ▼ [수정] 'pointerdown' 이벤트 하나로 마우스/터치 모두 처리
     element.addEventListener('pointerdown', start, { capture: true });
-}
-
-export function onIntegratedDragEnd(element) {
-    const layoutData = JSON.parse(localStorage.getItem(getKey(`layout_${state.activeLayoutId}`))) || {};
-    layoutData[element.dataset.id] = {
-        left: element.style.left,
-        top: element.style.top
-    };
-    localStorage.setItem(getKey(`layout_${state.activeLayoutId}`), JSON.stringify(layoutData));
-}
-
-// --- Zoom & Pan --- //
-
-let panzoomInstance = null;
-/**
- * 통합 모드 UI (Panzoom)를 초기화합니다.
- */
-export function initIntegratedModeUI() {
-    // 1. Panzoom 인스턴스 생성
-    panzoomInstance = Panzoom(dom.layoutContainer, {
-        canvas: true, // layoutContainer가 wrapper보다 큼
-        maxScale: 3,
-        minScale: 0.2,
-        step: 0.1, // 줌 버튼용 스텝
-        // ★★★ 중요 ★★★
-        // '.pc-item'에서 시작된 드래그는 맵 패닝을 무시합니다.
-        // 이를 통해 기존의 makeDraggable이 정상 동작합니다.
-        exclude: ['.pc-item'] 
-    });
-
-    // 2. Panzoom의 휠 이벤트를 wrapper에 연결
-    dom.layoutContainerWrapper.addEventListener('wheel', (event) => {
-        if (!panzoomInstance) return;
-        // Panzoom의 내장 휠 핸들러 호출
-        panzoomInstance.zoomWithWheel(event);
-    }, { passive: false });
-
-    // 3. 줌 버튼 연결
-    dom.zoomInBtn.addEventListener('click', () => panzoomInstance && panzoomInstance.zoomIn());
-    dom.zoomOutBtn.addEventListener('click', () => panzoomInstance && panzoomInstance.zoomOut());
-    dom.zoomResetBtn.addEventListener('click', () => panzoomInstance && panzoomInstance.zoom(1, { animate: true }));
-
-    // 4. Panzoom의 'zoom' 이벤트를 감지하여 state와 UI 업데이트
-    dom.layoutContainer.addEventListener('panzoomzoom', (event) => {
-        const newZoom = event.detail.scale;
-        updateState({ zoomLevel: newZoom });
-        dom.zoomResetBtn.textContent = `${Math.round(newZoom * 100)}%`;
-    });
-}
-
-/**
- * 통합 모드 UI (Panzoom)를 파괴합니다.
- * (부서 모드로 전환 시, 이벤트 리스너 중복 방지)
- */
-export function destroyIntegratedModeUI() {
-    if (panzoomInstance) {
-        panzoomInstance.destroy();
-        panzoomInstance = null;
-    }
-    
-    // 버튼 이벤트 리스너를 확실히 제거하기 위해 버튼을 복제/교체합니다.
-    // (이벤트 리스너 중복 등록 방지)
-    dom.zoomInBtn.replaceWith(dom.zoomInBtn.cloneNode(true));
-    dom.zoomOutBtn.replaceWith(dom.zoomOutBtn.cloneNode(true));
-    dom.zoomResetBtn.replaceWith(dom.zoomResetBtn.cloneNode(true));
-}
-
-export function centerViewOnLogicalOrigin(coordinate_offset) {
-    const wrapper = dom.layoutContainerWrapper;
-    if (wrapper) {
-        const scrollLeft = coordinate_offset - (wrapper.clientWidth / 2);
-        const scrollTop = coordinate_offset - (wrapper.clientHeight / 2);
-        wrapper.scrollTo(scrollLeft, scrollTop);
-    }
 }
