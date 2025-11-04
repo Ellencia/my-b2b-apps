@@ -8,6 +8,7 @@ const getKey = (key) => `${currentProfile}_${key}`;
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- DOM 요소 선택 ---
+    const mainEl = document.querySelector('main');
     const customerListEl = document.getElementById('customer-list');
     const addCustomerFAB = document.getElementById('add-customer-fab');
     const searchInput = document.getElementById('search-input');
@@ -225,23 +226,57 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const showPage = (page) => {
-        customerListContainer.style.display = 'none';
-        customerFormContainer.style.display = 'none';
-        customerDetailsContainer.style.display = 'none';
-        presetManagerContainer.style.display = 'none';
-        departmentPresetManagerContainer.style.display = 'none';
+        const isDesktop = window.innerWidth >= 768;
+
+        // On mobile, the FAB is hidden on all pages except the list
         addCustomerFAB.style.display = 'none';
-        if (page === 'list') {
-            customerListContainer.style.display = 'block';
+
+        if (isDesktop) {
+            // On desktop, the list is always visible. We just control the right column.
+            customerFormContainer.style.display = 'none';
+            customerDetailsContainer.style.display = 'none';
+            presetManagerContainer.style.display = 'none';
+            departmentPresetManagerContainer.style.display = 'none';
+            mainEl.classList.remove('details-visible');
+
+            if (page === 'form') {
+                customerFormContainer.style.display = 'block';
+                mainEl.classList.add('details-visible');
+            } else if (page === 'details') {
+                customerDetailsContainer.style.display = 'block';
+                mainEl.classList.add('details-visible');
+            } else if (page === 'presets') {
+                presetManagerContainer.style.display = 'block';
+                mainEl.classList.add('details-visible');
+            } else if (page === 'department-presets') {
+                departmentPresetManagerContainer.style.display = 'block';
+                mainEl.classList.add('details-visible');
+            }
+            // If page is 'list', we do nothing, as the right column is already hidden.
+            
+            // FAB is always visible on desktop
             addCustomerFAB.style.display = 'flex';
-        } else if (page === 'form') {
-            customerFormContainer.style.display = 'block';
-        } else if (page === 'details') {
-            customerDetailsContainer.style.display = 'block';
-        } else if (page === 'presets') {
-            presetManagerContainer.style.display = 'block';
-        } else if (page === 'department-presets') {
-            departmentPresetManagerContainer.style.display = 'block';
+
+        } else {
+            // Mobile behavior (the original logic)
+            customerListContainer.style.display = 'none';
+            customerFormContainer.style.display = 'none';
+            customerDetailsContainer.style.display = 'none';
+            presetManagerContainer.style.display = 'none';
+            departmentPresetManagerContainer.style.display = 'none';
+
+            if (page === 'list') {
+                customerListContainer.style.display = 'block';
+                addCustomerFAB.style.display = 'flex';
+            } else if (page === 'form') {
+                customerFormContainer.style.display = 'block';
+            } else if (page === 'details') {
+                customerDetailsContainer.style.display = 'block';
+            } else if (page === 'presets') {
+                presetManagerContainer.style.display = 'block';
+            } else if (page === 'department-presets') {
+                departmentPresetManagerContainer.style.display = 'block';
+            }
         }
     };
     // 제출 폼 표시하기
@@ -816,4 +851,10 @@ document.addEventListener('DOMContentLoaded', () => {
             renderDetails(customer);
         }
     }
+
+    window.addEventListener('resize', () => {
+        // Reset the view to a consistent state on resize
+        showPage('list');
+        renderCustomers(); // Re-render the list to apply any style changes
+    });
 });

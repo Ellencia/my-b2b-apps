@@ -345,3 +345,53 @@ hr {
 .autocomplete-item:hover {
     background-color: #f1f1f1;
 }
+
+/* Tablet and Desktop Styles */
+@media (min-width: 768px) {
+    main {
+        display: grid;
+        grid-template-columns: 40% 1fr;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+
+    #customer-list-container {
+        /* The list will always be visible on desktop */
+        display: block !important; 
+    }
+
+    #customer-form-container,
+    #customer-details-container,
+    #preset-manager-container,
+    #department-preset-manager-container {
+        /* The form/details will be visible on the right column */
+        display: none; /* Initially hidden, shown by JS */
+    }
+
+    /* When a customer is selected or a new one is being added */
+    main.details-visible #customer-form-container {
+        display: block;
+    }
+    main.details-visible #customer-details-container {
+        display: block;
+    }
+
+    .fab {
+        /* On desktop, the FAB can be smaller or positioned differently */
+        right: 1.5rem;
+        bottom: 1.5rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    main {
+        grid-template-columns: 35% 1fr;
+    }
+
+    /* Make form fields more compact on large screens */
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+}
