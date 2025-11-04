@@ -150,6 +150,19 @@ main {
     position: relative; /* ▼ [추가] 자동완성 목록의 기준점 */
 }
 
+/* 폼에서 한 줄에 여러 항목을 배치하기 위한 래퍼 */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 1:1 비율로 2열 */
+    gap: 1rem; /* 항목 사이의 간격 */
+    margin-bottom: 1rem; /* 다른 form-group과 동일한 하단 여백 유지 */
+}
+
+/* form-row 내부의 form-group은 자체 하단 여백을 제거합니다 (부모인 .form-row가 관리) */
+.form-row > .form-group {
+    margin-bottom: 0;
+}
+
 .form-group label {
     display: block;
     margin-bottom: 0.5rem;
