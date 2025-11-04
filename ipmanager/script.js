@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const cancelBtn = document.getElementById('cancel-btn');
     const formTitle = document.getElementById('form-title');
     const customerIdInput = document.getElementById('customer-id');
+    const createdAtInput = document.getElementById('created-at');
     const pcIdInput = document.getElementById('pc-id'); // New PC ID input
     const addPrinterBtnForm = document.getElementById('add-printer-btn-form');
     const addPrinterFromPresetBtn = document.getElementById('add-printer-from-preset-btn');
@@ -48,6 +49,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const departmentPresetIdInput = document.getElementById('department-preset-id');
     const cancelDepartmentPresetEditBtn = document.getElementById('cancel-department-preset-edit-btn');
     const changeProfileLink = document.getElementById('change-profile-link');
+
+    // --- 유틸리티 함수 ---
+    const toLocalISOString = (timestamp) => {
+        const date = new Date(timestamp);
+        // 로컬 시간대에 맞게 오프셋을 조정합니다.
+        const tzOffset = date.getTimezoneOffset() * 60000; // 분 -> 밀리초
+        const localDate = new Date(date.getTime() - tzOffset);
+        // 'YYYY-MM-DDTHH:MM' 형식으로 자릅니다.
+        return localDate.toISOString().slice(0, 16);
+    };
 
     // --- 데이터 관리 ---
     let customers = JSON.parse(localStorage.getItem(getKey('customers'))) || [];
@@ -151,8 +162,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 allExtraInfoHtml.push(`<small class="customer-list-extra">📝 ${c.backupNotes}</small>`);
             }
             const extraInfoBlock = allExtraInfoHtml.length > 0 ? `<br>${allExtraInfoHtml.join('')}` : '';
+
+            let createdAtDisplay = '등록일: 날짜 없음'; // 기본값
+            // c.createdAt의 타입이 'number'인 경우에만 날짜로 변환 시도
+            if (typeof c.createdAt === 'number') { 
+                createdAtDisplay = `등록일: ${new Date(c.createdAt).toLocaleDateString()}`;
+            }
+            // ▲▲▲
             // 고객 목록 항목 구성
-            li.innerHTML = `<span><strong>${c.name}</strong>${departmentDisplay}${pcIdDisplay}${workerNameDisplay}<br><small>${c.ip}</small><br><small>등록일: ${new Date(c.createdAt).toLocaleDateString()}</small>${extraInfoBlock}</span>`;
+            li.innerHTML = `<span><strong>${c.name}</strong>${departmentDisplay}${pcIdDisplay}${workerNameDisplay}<br><small>${c.ip}</small><br><small>${createdAtDisplay}</small>${extraInfoBlock}</span>`;
             li.dataset.id = c.id;
             customerListEl.appendChild(li);
         });
@@ -279,10 +297,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     };
+
     // 제출 폼 표시하기
     const showForm = (customer = null) => {
         customerForm.reset();
         printerFormList.innerHTML = '';
+
+        const createdAtContainer = createdAtInput.parentElement;
 
         // ▼ [수정] datalist 코드 삭제, 자동완성 div 초기화
         departmentResultsEl.innerHTML = '';
@@ -294,7 +315,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (customer) {
             formTitle.textContent = '고객 정보 수정';
+            createdAtContainer.style.display = 'block'; // [추가] 등록일 필드 보이기
             customerIdInput.value = customer.id;
+            createdAtInput.value = toLocalISOString(customer.createdAt || Date.now());
             document.getElementById('customer-name').value = customer.name;
             document.getElementById('worker-name').value = customer.workerName || '';
             pcIdInput.value = customer.pcId || ''; // Populate PC ID
@@ -333,6 +356,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } else {
             formTitle.textContent = '새 고객 추가';
+            createdAtContainer.style.display = 'none'; // [추가] 등록일 필드 숨기기
             customerIdInput.value = '';
             pcIdInput.value = ''; // Clear PC ID for new customer
             document.getElementById('status-none').checked = true; // 새 고객 폼의 상태 초기화 (기능 3)
@@ -554,9 +578,21 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- 상태 라디오 버튼 값 읽기 (기능 3) ▼ ---
         const selectedStatus = document.querySelector('input[name="status-group"]:checked').value;
 
+        // 등록일 처리
+        const createdAtValue = createdAtInput.value;
+        let newCreatedAtTimestamp;
+
+        if (createdAtValue) {
+            // 입력값이 있으면 해당 시간을 타임스탬프로 변환
+            newCreatedAtTimestamp = new Date(createdAtValue).getTime();
+        } else {
+            // 입력값이 비어있으면(사용자가 지웠으면) 현재 시간으로 저장
+            newCreatedAtTimestamp = Date.now();
+        }
+
         const customerData = {
             id: customerIdInput.value ? parseInt(customerIdInput.value) : Date.now(),
-            createdAt: customerIdInput.value ? customers.find(c => c.id == customerIdInput.value).createdAt : Date.now(), // Add creation timestamp
+            createdAt: newCreatedAtTimestamp,
             name: customerName, // trim 처리된 변수 사용
             workerName: workerName, // ▼ [수정] trim 처리된 변수 사용
             pcId: pcIdInput.value, // Store PC ID
