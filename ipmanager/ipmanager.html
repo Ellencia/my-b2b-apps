@@ -145,21 +145,25 @@
             <h2>프리셋 관리</h2>
             <form id="preset-form">
                 <h3>새 프리셋 추가</h3>
-                <div class="form-group">
-                    <label for="preset-name">프리셋 이름*</label>
-                    <input type="text" id="preset-name" placeholder="예: 2층 컬러 레이저젯" required>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="preset-name">프리셋 이름*</label>
+                        <input type="text" id="preset-name" placeholder="예: 2층 컬러 레이저젯" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="preset-model">모델명</label>
+                        <input type="text" id="preset-model">
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="preset-model">모델명</label>
-                    <input type="text" id="preset-model">
-                </div>
-                <div class="form-group">
-                    <label for="preset-ip">IP 주소</label>
-                    <input type="text" id="preset-ip" inputmode="numeric">
-                </div>
-                <div class="form-group">
-                    <label for="preset-port">포트</label>
-                    <input type="text" id="preset-port" inputmode="numeric">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="preset-ip">IP 주소</label>
+                        <input type="text" id="preset-ip" inputmode="numeric">
+                    </div>
+                    <div class="form-group">
+                        <label for="preset-port">포트</label>
+                        <input type="text" id="preset-port" inputmode="numeric">
+                    </div>
                 </div>
                 <input type="hidden" id="preset-id">
                 <div class="form-actions">
@@ -182,6 +186,7 @@
             <h2>부서 프리셋 관리</h2>
             <form id="department-preset-form">
                 <h3>새 부서 프리셋 추가</h3>
+                <div class="form-row">
                 <div class="form-group">
                     <label for="department-preset-name">부서 이름*</label>
                     <input type="text" id="department-preset-name" placeholder="예: 경영지원팀" required>
@@ -190,6 +195,8 @@
                     <label for="department-preset-gateway">게이트웨이</label>
                     <input type="text" id="department-preset-gateway" inputmode="numeric">
                 </div>
+                </div>
+                <div class="form-row">
                 <div class="form-group">
                     <label for="department-preset-dns1">기본 DNS</label>
                     <input type="text" id="department-preset-dns1" inputmode="numeric">
@@ -197,6 +204,7 @@
                 <div class="form-group">
                     <label for="department-preset-dns2">보조 DNS</label>
                     <input type="text" id="department-preset-dns2" inputmode="numeric">
+                </div>
                 </div>
                 <input type="hidden" id="department-preset-id">
                 <div class="form-actions">
