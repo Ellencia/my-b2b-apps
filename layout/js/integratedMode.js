@@ -1,6 +1,7 @@
 import state, { updateState, saveIntegratedData, validateActiveLayoutId } from './state.js';
 import { dom } from './dom.js';
 import { makeDraggable } from './uiControl.js';
+import { centerViewAt } from './uiControl.js';
 import { COORDINATE_OFFSET, getKey } from './utils.js';
 
 // --- Main Initialization ---
@@ -67,11 +68,44 @@ function renderIntegratedLayout() {
     const customersInLayout = state.customers.filter(c => departmentsInLayout.includes(c.department));
     const savedPositions = JSON.parse(localStorage.getItem(getKey(`layout_${state.activeLayoutId}`))) || {};
 
+    const hasSavedData = Object.keys(savedPositions).length > 0;
+
+    // ▼ [추가] 아이템들의 경계를 계산하기 위한 변수
+    let minLeft = Infinity, minTop = Infinity;
+    let maxLeft = -Infinity, maxTop = -Infinity;
+    let hasItems = false;
+
     customersInLayout.forEach(customer => {
-        const pcElement = createPcElement(customer, savedPositions);
+        const pcElement = createPcElement(customer, savedPositions, hasSavedData);
         makeDraggable(pcElement, null);
         dom.layoutContainer.appendChild(pcElement);
+
+        // ▼ [추가] 렌더링된 요소의 실제 위치를 읽어 경계 계산
+        const left = parseFloat(pcElement.style.left);
+        const top = parseFloat(pcElement.style.top);
+        
+        if (!isNaN(left) && !isNaN(top)) {
+            hasItems = true;
+            if (left < minLeft) minLeft = left;
+            if (top < minTop) minTop = top;
+            if (left > maxLeft) maxLeft = left;
+            if (top > maxTop) maxTop = top;
+        }
     });
+
+    // ▼ [수정] 계산된 경계의 중앙으로 카메라 이동
+    if (hasItems) {
+        // 아이템들의 평균 중앙 위치 계산
+        const centerX = (minLeft + maxLeft) / 2;
+        const centerY = (minTop + maxTop) / 2;
+        centerViewAt(centerX, centerY);
+    } else if (hasSavedData) {
+        // "옛날 레이아웃" (아이템 없음): (0, 0)으로 스크롤
+        centerViewAt(0, 0);
+    } else {
+        // "새 레이아웃" (아이템 없음): (1000, 1000)으로 중앙 정렬
+        centerViewAt(COORDINATE_OFFSET, COORDINATE_OFFSET);
+    }
 }
 
 function createPcElement(customer, savedPositions) {
@@ -95,8 +129,8 @@ function createPcElement(customer, savedPositions) {
         pcElement.style.left = savedPositions[customer.id].left;
         pcElement.style.top = savedPositions[customer.id].top;
     } else {
-        pcElement.style.left = `${Math.random() * 400}px`;
-        pcElement.style.top = `${Math.random() * 400}px`;
+        pcElement.style.left = `${Math.random() * 400 + (COORDINATE_OFFSET - 200)}px`;
+        pcElement.style.top = `${Math.random() * 400 + (COORDINATE_OFFSET - 200)}px`;
     }
     return pcElement;
 }

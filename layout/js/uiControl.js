@@ -1,6 +1,6 @@
 import state, { updateState } from './state.js';
 import { dom } from './dom.js';
-import { getClientCoords, getKey } from './utils.js';
+import { getClientCoords, getKey, COORDINATE_OFFSET } from './utils.js';
 
 const CLICK_THRESHOLD = 5;
 const TIME_THRESHOLD = 200;
@@ -105,4 +105,15 @@ export function makeDraggable(element, onDragEnd) {
     const start = (e) => dragStart(e, onDragEnd);
     // ▼ [수정] 'pointerdown' 이벤트 하나로 마우스/터치 모두 처리
     element.addEventListener('pointerdown', start, { capture: true });
+}
+
+// ▼ [수정] 지정한 좌표 (x, y)가 뷰의 중앙에 오도록 스크롤하는 함수
+export function centerViewAt(logicalX, logicalY) {
+    const wrapper = dom.layoutContainerWrapper;
+    if (wrapper) {
+        // (logicalX, logicalY) 지점이 뷰포트 중앙에 오도록 스크롤 위치 계산
+        const scrollLeft = logicalX - (wrapper.clientWidth / 2);
+        const scrollTop = logicalY - (wrapper.clientHeight / 2);
+        wrapper.scrollTo(scrollLeft, scrollTop);
+    }
 }
