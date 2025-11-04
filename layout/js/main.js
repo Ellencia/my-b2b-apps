@@ -16,12 +16,14 @@ if (!state.currentProfile) {
 
 // 2. Main App Rendering Logic
 function renderApp() {
-
-    // ▼ [추가] 모드 변경 시, 이전 모드의 UI 핸들러(Panzoom)를 정리
     destroyIntegratedModeUI();
-    // (부서 모드는 정리할 UI 핸들러가 없으므로 Panzoom 정리만 호출)
-    
+
     if (state.viewMode === 'department') {
+        // ▼ [추가] 부서 모드 진입 시 줌 레벨과 CSS 강제 리셋
+        updateState({ zoomLevel: 1 });
+        dom.layoutContainer.style.transform = 'scale(1)';
+        // ▲ [추가]
+
         dom.departmentModeControls.style.display = 'flex';
         dom.integratedModeControls.style.display = 'none';
         document.querySelector('main').classList.remove('integrated-mode');
@@ -31,10 +33,9 @@ function renderApp() {
         dom.integratedModeControls.style.display = 'block';
         document.querySelector('main').classList.add('integrated-mode');
         initIntegratedMode();
-        initIntegratedModeUI(); // ▼ [추가] 통합 모드일 때만 Panzoom 초기화
+        initIntegratedModeUI(); 
     }
 }
-
 // 3. Mode Switching
 function handleModeChange() {
     const newMode = state.viewMode === 'department' ? 'integrated' : 'department';

@@ -10,7 +10,7 @@ function renderDepartmentLayout(department) {
 
     departmentCustomers.forEach(customer => {
         const pcElement = createPcElement(customer, savedPositions);
-        makeDraggable(pcElement, null, false); // No special onDragEnd needed for department mode
+        makeDraggable(pcElement, null); // No special onDragEnd needed for department mode
         dom.layoutContainer.appendChild(pcElement);
     });
 }

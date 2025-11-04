@@ -51,7 +51,7 @@ function renderIntegratedLayout() {
 
     customersInLayout.forEach(customer => {
         const pcElement = createPcElement(customer, savedPositions);
-        makeDraggable(pcElement, onIntegratedDragEnd, true);
+        makeDraggable(pcElement, onIntegratedDragEnd);
         dom.layoutContainer.appendChild(pcElement);
     });
 }

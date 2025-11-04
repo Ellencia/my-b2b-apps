@@ -4,110 +4,112 @@ import { getClientCoords, getKey } from './utils.js';
 
 const CLICK_THRESHOLD = 5;
 const TIME_THRESHOLD = 200;
-
-// --- Drag and Drop --- //
-
-function elementDrag(e) {
+let _activeDragElement = null; // saves the currently dragged element
+// --- ▼ [재설계] 줌(Zoom)을 지원하는 새 드래그 로직 ---
+/**
+ * 1. 드래그 시작 (pointerdown)
+ * Panzoom보다 먼저 이벤트를 '캡처'해서 가로챕니다.
+ */
+function dragStart(e, onDragEndCallback) {
+    // 1. 이벤트 차단: Panzoom이 맵 패닝을 시작하지 못하게 막음
+    e.stopPropagation();
     e.preventDefault();
-    const coords = getClientCoords(e);
-    const { dragState } = state;
-
-    dragState.pos1 = dragState.pos3 - coords.clientX;
-    dragState.pos2 = dragState.pos4 - coords.clientY;
-    dragState.pos3 = coords.clientX;
-    dragState.pos4 = coords.clientY;
 
     const element = e.target.closest('.pc-item');
-    element.style.top = (element.offsetTop - dragState.pos2) + "px";
-    element.style.left = (element.offsetLeft - dragState.pos1) + "px";
-}
-
-function integratedElementDrag(e) {
-    e.preventDefault();
-    const coords = getClientCoords(e);
-    const element = e.target.closest('.pc-item');
-
-    const deltaX = coords.clientX - element.mouseStartX;
-    const deltaY = coords.clientY - element.mouseStartY;
-
-    const newLeft = element.initialLeft + deltaX / state.zoomLevel;
-    const newTop = element.initialTop + deltaY / state.zoomLevel;
-
-    const containerWidth = 8000;
-    const containerHeight = 8000;
-    const elementWidth = element.offsetWidth;
-    const elementHeight = element.offsetHeight;
-
-    const clampedLeft = Math.max(0, Math.min(newLeft, containerWidth - elementWidth));
-    const clampedTop = Math.max(0, Math.min(newTop, containerHeight - elementHeight));
-
-    element.style.left = clampedLeft + 'px';
-    element.style.top = clampedTop + 'px';
-}
-
-let dragEndListener = null;
-
-function dragEnd(e, onDragEnd) {
-    document.removeEventListener('mousemove', elementDrag);
-    document.removeEventListener('mouseup', dragEndListener);
-    document.removeEventListener('touchmove', elementDrag);
-    document.removeEventListener('touchend', dragEndListener);
+    if (!element) return;
     
-    document.removeEventListener('mousemove', integratedElementDrag);
-    document.removeEventListener('touchmove', integratedElementDrag);
+    _activeDragElement = element; // 현재 드래그 중인 요소 저장
 
-    const { dragState } = state;
-    const timeElapsed = Date.now() - dragState.dragStartTime;
-    const endCoords = e.changedTouches ? { clientX: e.changedTouches[0].clientX, clientY: e.changedTouches[0].clientY } : { clientX: e.clientX, clientY: e.clientY };
-    const distanceMoved = Math.sqrt(Math.pow(endCoords.clientX - dragState.startX, 2) + Math.pow(endCoords.clientY - dragState.startY, 2));
-
-    if (timeElapsed < TIME_THRESHOLD && distanceMoved < CLICK_THRESHOLD) {
-        const customerId = e.target.closest('.pc-item').dataset.id;
-        window.location.href = `../ipmanager/ipmanager.html#customer-${customerId}`;
-    }
-
-    if (onDragEnd) {
-        onDragEnd(e.target.closest('.pc-item'));
-    }
-}
-
-function dragStart(e, onDragEnd, useIntegratedDrag = false) {
-    e.preventDefault();
     const coords = getClientCoords(e);
-    const element = e.target.closest('.pc-item');
-
+    
+    // 2. 드래그 상태 초기화: '현재 줌 레벨'과 '시작 좌표' 저장
     updateState({
         dragState: {
-            pos3: coords.clientX,
-            pos4: coords.clientY,
+            // 마우스 시작 좌표 (화면 기준)
             startX: coords.clientX,
             startY: coords.clientY,
+            // 요소의 시작 위치 (맵 기준)
+            startTop: element.offsetTop,
+            startLeft: element.offsetLeft,
+            // 클릭 시간 (클릭/드래그 구분용)
             dragStartTime: Date.now(),
+            // 이 드래그가 끝났을 때 실행할 콜백 (저장 함수)
+            onDragEnd: onDragEndCallback 
         }
     });
 
-    dragEndListener = (event) => dragEnd(event, onDragEnd);
-
-    if (useIntegratedDrag) {
-        element.mouseStartX = coords.clientX;
-        element.mouseStartY = coords.clientY;
-        element.initialTop = element.offsetTop;
-        element.initialLeft = element.offsetLeft;
-        document.addEventListener('mousemove', integratedElementDrag);
-        document.addEventListener('touchmove', integratedElementDrag, { passive: false });
-    } else {
-        document.addEventListener('mousemove', elementDrag);
-        document.addEventListener('touchmove', elementDrag, { passive: false });
-    }
-
-    document.addEventListener('mouseup', dragEndListener);
-    document.addEventListener('touchend', dragEndListener);
+    // 3. 'document'에 Move, End 리스너 등록
+    //    (마우스가 박스를 벗어나도 드래그가 유지되도록)
+    document.addEventListener('pointermove', dragMove);
+    document.addEventListener('pointerup', dragEnd);
 }
 
-export function makeDraggable(element, onDragEnd, useIntegratedDrag = false) {
-    const start = (e) => dragStart(e, onDragEnd, useIntegratedDrag);
-    element.addEventListener('mousedown', start);
-    element.addEventListener('touchstart', start, { passive: false });
+/**
+ * 2. 드래그 중 (pointermove)
+ * '줌 레벨'을 반영하여 요소의 위치를 계산합니다.
+ */
+function dragMove(e) {
+    if (!_activeDragElement) return; // 드래그 중이 아니면 종료
+
+    const { dragState } = state;
+    const coords = getClientCoords(e);
+
+    // 1. 마우스가 화면에서 움직인 거리 (delta) 계산
+    const deltaX = coords.clientX - dragState.startX;
+    const deltaY = coords.clientY - dragState.startY;
+
+    // 2. ★ 핵심 ★
+    //    마우스 이동 거리를 '현재 줌 레벨'로 나눠서
+    //    맵 안에서의 실제 이동 거리를 계산합니다.
+    //    (부서 모드에서는 state.zoomLevel이 1이므로 deltaX / 1 이 됨)
+    const newLeft = dragState.startLeft + (deltaX / state.zoomLevel);
+    const newTop = dragState.startTop + (deltaY / state.zoomLevel);
+
+    // 3. 요소 위치 업데이트
+    _activeDragElement.style.left = `${newLeft}px`;
+    _activeDragElement.style.top = `${newTop}px`;
+}
+
+/**
+ * 3. 드래그 종료 (pointerup)
+ * 리스너를 제거하고, 클릭/드래그를 구분하여 처리합니다.
+ */
+function dragEnd(e) {
+    if (!_activeDragElement) return; // 드래그 중이 아니면 종료
+
+    const { dragState } = state;
+
+    // 1. Move, End 리스너 제거
+    document.removeEventListener('pointermove', dragMove);
+    document.removeEventListener('pointerup', dragEnd);
+
+    // 2. 클릭/드래그 구분
+    const timeElapsed = Date.now() - dragState.dragStartTime;
+    const endCoords = getClientCoords(e);
+    const distanceMoved = Math.sqrt(Math.pow(endCoords.clientX - dragState.startX, 2) + Math.pow(endCoords.clientY - dragState.startY, 2));
+
+    if (timeElapsed < TIME_THRESHOLD && distanceMoved < CLICK_THRESHOLD) {
+        // "클릭"으로 판정
+        const customerId = _activeDragElement.dataset.id;
+        window.location.href = `../ipmanager/ipmanager.html#customer-${customerId}`;
+    } else {
+        // "드래그"로 판정
+        // 3. 저장 콜백 실행 (onDragEnd)
+        if (dragState.onDragEnd) {
+            dragState.onDragEnd(_activeDragElement);
+        }
+    }
+
+    // 4. 활성 요소 초기화
+    _activeDragElement = null;
+    updateState({ dragState: {} });
+}
+// --- ▲ [재설계] ---
+
+export function makeDraggable(element, onDragEnd) {
+    const start = (e) => dragStart(e, onDragEnd);
+    // ▼ [수정] 'pointerdown' 이벤트 하나로 마우스/터치 모두 처리
+    element.addEventListener('pointerdown', start, { capture: true });
 }
 
 export function onIntegratedDragEnd(element) {
