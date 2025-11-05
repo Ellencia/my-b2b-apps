@@ -6,17 +6,19 @@ const CLICK_THRESHOLD = 5;
 const TIME_THRESHOLD = 200;
 let _activeDragElement = null; // saves the currently dragged element
 
-function dragStart(e, onDragEndCallback) {
+// ▼ [수정] dragStart가 드래그할 요소를 직접 받도록 변경
+function dragStart(e, elementToDrag, onDragEndCallback) {
     e.stopPropagation();
     e.preventDefault();
 
-    const element = e.target.closest('.pc-item');
+    // const element = e.target.closest('.pc-item'); // OLD
+    const element = elementToDrag; // NEW
     if (!element) return;
-    
+
     _activeDragElement = element; // 현재 드래그 중인 요소 저장
 
     const coords = getClientCoords(e);
-    
+
     // 2. 드래그 상태 초기화: '현재 줌 레벨'과 '시작 좌표' 저장
     updateState({
         dragState: {
@@ -24,17 +26,16 @@ function dragStart(e, onDragEndCallback) {
             startX: coords.clientX,
             startY: coords.clientY,
             // 요소의 시작 위치 (맵 기준)
-            startTop: element.offsetTop,
-            startLeft: element.offsetLeft,
+            startTop: parseFloat(element.style.top) || 0,
+            startLeft: parseFloat(element.style.left) || 0,
             // 클릭 시간 (클릭/드래그 구분용)
             dragStartTime: Date.now(),
             // 이 드래그가 끝났을 때 실행할 콜백 (저장 함수)
-            onDragEnd: onDragEndCallback 
+            onDragEnd: onDragEndCallback
         }
     });
 
     // 3. 'document'에 Move, End 리스너 등록
-    //    (마우스가 박스를 벗어나도 드래그가 유지되도록)
     document.addEventListener('pointermove', dragMove);
     document.addEventListener('pointerup', dragEnd);
 }
@@ -56,7 +57,6 @@ function dragMove(e) {
     // 2. ★ 핵심 ★
     //    마우스 이동 거리를 '현재 줌 레벨'로 나눠서
     //    맵 안에서의 실제 이동 거리를 계산합니다.
-    //    (부서 모드에서는 state.zoomLevel이 1이므로 deltaX / 1 이 됨)
     const newLeft = dragState.startLeft + (deltaX / state.zoomLevel);
     const newTop = dragState.startTop + (deltaY / state.zoomLevel);
 
@@ -85,8 +85,11 @@ function dragEnd(e) {
 
     if (timeElapsed < TIME_THRESHOLD && distanceMoved < CLICK_THRESHOLD) {
         // "클릭"으로 판정
-        const customerId = _activeDragElement.dataset.id;
-        window.location.href = `../ipmanager/ipmanager.html#customer-${customerId}`;
+        // ▼ [수정] 드래그된 요소가 '.pc-item'일 경우에만 네비게이션 실행
+        if (_activeDragElement.classList.contains('pc-item')) {
+            const customerId = _activeDragElement.dataset.id;
+            window.location.href = `../ipmanager/ipmanager.html#customer-${customerId}`;
+        }
     } else {
         // "드래그"로 판정
         // 3. 저장 콜백 실행 (onDragEnd)
@@ -99,11 +102,10 @@ function dragEnd(e) {
     _activeDragElement = null;
     updateState({ dragState: {} });
 }
-// --- ▲ [재설계] ---
 
+// ▼ [수정] dragStart에 드래그할 요소를 직접 전달
 export function makeDraggable(element, onDragEnd) {
-    const start = (e) => dragStart(e, onDragEnd);
-    // ▼ [수정] 'pointerdown' 이벤트 하나로 마우스/터치 모두 처리
+    const start = (e) => dragStart(e, element, onDragEnd);
     element.addEventListener('pointerdown', start, { capture: true });
 }
 
@@ -114,6 +116,6 @@ export function centerViewAt(logicalX, logicalY) {
         // (logicalX, logicalY) 지점이 뷰포트 중앙에 오도록 스크롤 위치 계산
         const scrollLeft = logicalX - (wrapper.clientWidth / 2);
         const scrollTop = logicalY - (wrapper.clientHeight / 2);
-        wrapper.scrollTo(scrollLeft, scrollTop);
+        wrapper.scrollTo({ left: scrollLeft, top: scrollTop, behavior: 'smooth' });
     }
 }

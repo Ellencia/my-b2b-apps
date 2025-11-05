@@ -24,25 +24,169 @@ function addEventListeners() {
     dom.saveLayoutBtnIntegrated.addEventListener('click', saveIntegratedLayout);
 }
 
-// ▼ [추가] 통합 모드 수동 저장 함수 (departmentMode.js에서 복사)
+// ▼▼▼ [MAJOR CHANGE] ▼▼▼
+// --- New Save/Render Logic for Department Blocks ---
+
 function saveIntegratedLayout() {
     if (!state.activeLayoutId) {
         alert('저장할 레이아웃을 먼저 선택해주세요.');
         return;
     }
-    const layoutData = {};
-    dom.layoutContainer.querySelectorAll('.pc-item').forEach(pcElement => {
-        layoutData[pcElement.dataset.id] = {
-            left: pcElement.style.left,
-            top: pcElement.style.top
-        };
+    const layoutData = {
+        departments: {}
+    };
+    // 이제 .department-block의 위치를 저장합니다.
+    dom.layoutContainer.querySelectorAll('.department-block').forEach(deptBlock => {
+        const deptName = deptBlock.dataset.departmentName;
+        if (deptName) {
+            layoutData.departments[deptName] = {
+                left: deptBlock.style.left,
+                top: deptBlock.style.top
+            };
+        }
     });
-    // 키 이름만 `state.activeLayoutId`로 변경
+
     localStorage.setItem(getKey(`layout_${state.activeLayoutId}`), JSON.stringify(layoutData));
-    alert('레이아웃이 저장되었습니다!');
+    alert('통합 레이아웃이 저장되었습니다!');
 }
 
-// --- UI Rendering ---
+function renderIntegratedLayout() {
+    dom.layoutContainer.innerHTML = '';
+
+    const sizer = document.createElement('div');
+    sizer.style.width = '3000px';
+    sizer.style.height = '3000px';
+    sizer.style.position = 'static';
+    sizer.style.visibility = 'hidden';
+    sizer.style.pointerEvents = 'none';
+    dom.layoutContainer.appendChild(sizer);
+
+    if (!state.activeLayoutId) {
+        centerViewAt(0, 0);
+        return;
+    }
+
+    const savedLayoutData = JSON.parse(localStorage.getItem(getKey(`layout_${state.activeLayoutId}`))) || {};
+    const savedDepartmentPositions = savedLayoutData.departments || {};
+    const departmentsInLayout = Object.keys(state.layoutAssignments).filter(dept => state.layoutAssignments[dept] === state.activeLayoutId);
+
+    if (departmentsInLayout.length === 0) {
+        centerViewAt(0, 0);
+        return;
+    }
+
+    departmentsInLayout.forEach((departmentName, index) => {
+        const deptBlock = document.createElement('div');
+        deptBlock.classList.add('department-block');
+        deptBlock.dataset.departmentName = departmentName;
+        deptBlock.style.position = 'absolute';
+        deptBlock.innerHTML = `<h3 class="department-block-title">${departmentName}</h3>`;
+
+        if (savedDepartmentPositions[departmentName]) {
+            deptBlock.style.left = savedDepartmentPositions[departmentName].left;
+            deptBlock.style.top = savedDepartmentPositions[departmentName].top;
+        } else {
+            const x = (index % 4) * 400 + 50;
+            const y = Math.floor(index / 4) * 400 + 50;
+            deptBlock.style.left = `${x}px`;
+            deptBlock.style.top = `${y}px`;
+        }
+
+        const departmentCustomers = state.customers.filter(c => c.department === departmentName);
+        const departmentItemLayout = JSON.parse(localStorage.getItem(getKey(`layout_${departmentName}`))) || {};
+
+        // ▼▼▼ NEW NORMALIZATION LOGIC ▼▼▼
+        let minLeft = Infinity, minTop = Infinity, maxRight = 0, maxBottom = 0;
+        let hasItems = false;
+        const itemsToRender = [];
+
+        departmentCustomers.forEach(customer => {
+            if (departmentItemLayout[customer.id]) {
+                hasItems = true;
+                const pos = departmentItemLayout[customer.id];
+                const left = parseFloat(pos.left);
+                const top = parseFloat(pos.top);
+                const width = 60; // pc-item width
+                const height = 40; // pc-item height
+
+                if (left < minLeft) minLeft = left;
+                if (top < minTop) minTop = top;
+                if (left + width > maxRight) maxRight = left + width;
+                if (top + height > maxBottom) maxBottom = top + height;
+                
+                itemsToRender.push(customer);
+            }
+        });
+
+        if (hasItems) {
+            const contentWidth = maxRight - minLeft;
+            const contentHeight = maxBottom - minTop;
+            const titleHeight = 30; // From CSS padding-top
+            const padding = { x: 10, y: 10 };
+
+            deptBlock.style.width = `${contentWidth + (padding.x * 2)}px`;
+            deptBlock.style.height = `${contentHeight + titleHeight + padding.y}px`;
+
+            itemsToRender.forEach(customer => {
+                const pcElement = createPcElement(customer, departmentItemLayout);
+                const originalLeft = parseFloat(pcElement.style.left);
+                const originalTop = parseFloat(pcElement.style.top);
+
+                pcElement.style.left = `${originalLeft - minLeft + padding.x}px`;
+                pcElement.style.top = `${originalTop - minTop + titleHeight}px`;
+
+                pcElement.style.pointerEvents = 'none';
+                deptBlock.appendChild(pcElement);
+            });
+        }
+        // ▲▲▲ END OF NEW LOGIC ▲▲▲
+
+        makeDraggable(deptBlock, null);
+        dom.layoutContainer.appendChild(deptBlock);
+    });
+
+    setTimeout(() => {
+        const firstBlock = dom.layoutContainer.querySelector('.department-block');
+        if (firstBlock) {
+            centerViewAt(parseFloat(firstBlock.style.left) || 0, parseFloat(firstBlock.style.top) || 0);
+        } else {
+            centerViewAt(0, 0);
+        }
+    }, 0);
+}
+
+// createPcElement는 거의 동일하지만, 세 번째 인자(hasSavedData)는 더 이상 필요 없습니다.
+function createPcElement(customer, savedPositions) {
+    const pcElement = document.createElement('div');
+    pcElement.classList.add('pc-item');
+    if (customer.isError) pcElement.classList.add('pc-item-error');
+    else if (customer.isPending) pcElement.classList.add('pc-item-pending');
+    else if (customer.isCompleted) pcElement.classList.add('pc-item-completed');
+
+    pcElement.dataset.id = customer.id;
+    const ipParts = customer.ip.split('.');
+    const lastIpDigit = ipParts.length > 0 ? ipParts[ipParts.length - 1] : customer.ip;
+    pcElement.innerHTML = `
+        <strong>${customer.name}</strong><br>
+        ${lastIpDigit}
+    `;
+    pcElement.style.position = 'absolute';
+
+    if (savedPositions[customer.id]) {
+        pcElement.style.left = savedPositions[customer.id].left;
+        pcElement.style.top = savedPositions[customer.id].top;
+    } else {
+        // 부서 내 레이아웃 정보가 없을 경우, 블록 내에서 랜덤 배치
+        pcElement.style.left = `${Math.random() * 100}px`;
+        pcElement.style.top = `${Math.random() * 100 + 20}px`; // Title height 고려
+    }
+    return pcElement;
+}
+
+// ▲▲▲ [MAJOR CHANGE] ▲▲▲
+
+
+// --- UI Rendering (Dropdown) ---
 function populateLayoutDropdown() {
     dom.departmentFocusSelect.innerHTML = '';
     if (state.layouts.length === 0) {
@@ -60,97 +204,6 @@ function populateLayoutDropdown() {
     });
 }
 
-function renderIntegratedLayout() {
-    dom.layoutContainer.innerHTML = '';
-
-    // ▼▼▼ [추가] 3000x3000 스크롤 영역을 강제하는 Sizer 추가 ▼▼▼
-    const sizer = document.createElement('div');
-    sizer.style.width = '3000px';
-    sizer.style.height = '3000px';
-    sizer.style.position = 'static';
-    sizer.style.visibility = 'hidden';
-    sizer.style.pointerEvents = 'none';
-    dom.layoutContainer.appendChild(sizer);
-    // ▲▲▲ Sizer 추가 끝 ▲▲▲
-
-    if (!state.activeLayoutId) return;
-
-    const departmentsInLayout = Object.keys(state.layoutAssignments).filter(dept => state.layoutAssignments[dept] === state.activeLayoutId);
-    const customersInLayout = state.customers.filter(c => departmentsInLayout.includes(c.department));
-    const savedPositions = JSON.parse(localStorage.getItem(getKey(`layout_${state.activeLayoutId}`))) || {};
-
-    const hasSavedData = Object.keys(savedPositions).length > 0;
-
-    // ▼ [추가] 아이템들의 경계를 계산하기 위한 변수
-    let minLeft = Infinity, minTop = Infinity;
-    let maxLeft = -Infinity, maxTop = -Infinity;
-    let hasItems = false;
-
-    customersInLayout.forEach(customer => {
-        const pcElement = createPcElement(customer, savedPositions, hasSavedData);
-        makeDraggable(pcElement, null);
-        dom.layoutContainer.appendChild(pcElement);
-
-        // ▼ [추가] 렌더링된 요소의 실제 위치를 읽어 경계 계산
-        const left = parseFloat(pcElement.style.left);
-        const top = parseFloat(pcElement.style.top);
-        
-        if (!isNaN(left) && !isNaN(top)) {
-            hasItems = true;
-            if (left < minLeft) minLeft = left;
-            if (top < minTop) minTop = top;
-            if (left > maxLeft) maxLeft = left;
-            if (top > maxTop) maxTop = top;
-        }
-    });
-
-    // ▼ [수정] 계산된 경계의 중앙으로 카메라 이동
-    if (hasItems) {
-        // 아이템들의 평균 중앙 위치 계산
-        const centerX = (minLeft + maxLeft) / 2;
-        const centerY = (minTop + maxTop) / 2;
-
-        // ▼ [수정] 렌더링 다음 틱(tick)에서 스크롤 실행 (타이밍 문제 해결)
-        setTimeout(() => {
-            centerViewAt(centerX, centerY);
-        }, 0);
-
-        centerViewAt(centerX, centerY);
-    } else if (hasSavedData) {
-        // "옛날 레이아웃" (아이템 없음): (0, 0)으로 스크롤
-        centerViewAt(0, 0);
-    } else {
-        // "새 레이아웃" (아이템 없음): (1000, 1000)으로 중앙 정렬
-        centerViewAt(COORDINATE_OFFSET, COORDINATE_OFFSET);
-    }
-}
-
-function createPcElement(customer, savedPositions) {
-    const pcElement = document.createElement('div');
-    pcElement.classList.add('pc-item');
-    if (customer.isError) pcElement.classList.add('pc-item-error');
-    else if (customer.isPending) pcElement.classList.add('pc-item-pending');
-    else if (customer.isCompleted) pcElement.classList.add('pc-item-completed');
-    
-    pcElement.dataset.id = customer.id;
-    const ipParts = customer.ip.split('.');
-    const lastIpDigit = ipParts.length > 0 ? ipParts[ipParts.length - 1] : customer.ip;
-    pcElement.innerHTML = `
-        <strong>${customer.name}</strong><br>
-        ${lastIpDigit}<br>
-        <span class="pc-item-dept">${customer.department}</span>
-    `;
-    pcElement.style.position = 'absolute';
-
-    if (savedPositions[customer.id]) {
-        pcElement.style.left = savedPositions[customer.id].left;
-        pcElement.style.top = savedPositions[customer.id].top;
-    } else {
-        pcElement.style.left = `${Math.random() * 400 + (COORDINATE_OFFSET - 200)}px`;
-        pcElement.style.top = `${Math.random() * 400 + (COORDINATE_OFFSET - 200)}px`;
-    }
-    return pcElement;
-}
 
 // --- Modal Logic ---
 function openManageModal() {
@@ -163,7 +216,7 @@ function openManageModal() {
 function closeManageModal() {
     dom.manageLayoutsModal.style.display = 'none';
     populateLayoutDropdown();
-    renderIntegratedLayout(); 
+    renderIntegratedLayout();
 }
 
 function renderLayoutManagementList() {
@@ -270,7 +323,7 @@ function deleteLayout(layoutId) {
     if (confirm('정말로 이 레이아웃을 삭제하시겠습니까?\n저장된 모든 위치 정보가 영구적으로 사라집니다.')) {
         updateState({ layouts: state.layouts.filter(l => l.id !== layoutId) });
         localStorage.removeItem(getKey(`layout_${layoutId}`));
-        
+
         Object.keys(state.layoutAssignments).forEach(dept => {
             if (state.layoutAssignments[dept] === layoutId) {
                 delete state.layoutAssignments[dept];
@@ -298,9 +351,8 @@ function handleLayoutFocusChange(e) {
     renderIntegratedLayout();
 }
 
+// This function is no longer relevant as department names are titles of blocks
 function toggleDepartmentNames() {
-    dom.layoutContainer.classList.toggle('show-departments');
-    const isShowing = dom.layoutContainer.classList.contains('show-departments');
-    dom.toggleDeptNamesBtn.textContent = isShowing ? '부서 숨김' : '부서 표시';
-    dom.toggleDeptNamesBtn.classList.toggle('active', isShowing);
+   // No longer needed, but let's not remove it to avoid breaking the button
+   alert('부서 이름은 각 블록의 제목으로 항상 표시됩니다.');
 }

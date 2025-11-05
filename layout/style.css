@@ -332,22 +332,52 @@ main {
     color: #333;
 }
 
-.pc-item.pc-item-completed {
-    background-color: #52c41a;
-    border: 1px solid #52c41a;
-    color: #fff;
+.pc-
+
+/* --- ▼▼▼ Department Block Styles ▼▼▼ --- */
+.department-block {
+    position: absolute; /* Important for dragging */
+    background-color: rgba(255, 255, 255, 0.8);
+    border: 2px solid #6c757d;
+    border-radius: 8px;
+    padding: 30px 10px 10px 10px; /* Top padding for title */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    cursor: grab;
+    /* 부서 블록 내의 아이템 크기에 맞춰 자동으로 크기 조절 */
+    min-width: 100px;
+    min-height: 100px;
+    width: auto;
+    height: auto;
 }
 
-.pc-item.pc-item-error {
-    background-color: #f5222d;
-    border: 1px solid #f5222d;
-    color: #fff;
+.department-block:active {
+    cursor: grabbing;
+    z-index: 20; /* Ensure dragged block is on top */
+    border-color: #007bff;
 }
 
-footer {
-    background-color: #333;
-    color: #fff;
+.department-block-title {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    background-color: #6c757d;
+    color: white;
+    padding: 4px 8px;
+    margin: 0;
+    font-size: 0.9rem;
+    border-radius: 6px 6px 0 0;
     text-align: center;
-    padding: 1rem;
-    margin-top: auto;
+    pointer-events: none; /* Title text should not interfere with dragging */
+}
+
+
+/* --- ▼▼▼ Department Block Styles ▼▼▼ --- */
+.department-block {
+    position: absolute; /* Important for dragging */
+    background-color: rgba(255, 255, 255, 0.8);
+    border: 2px solid #6c757d;
+    border-radius: 8px;
+    padding: 30px 10px 10px 10px; /* Top padding for title */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
