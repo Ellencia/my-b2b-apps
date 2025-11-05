@@ -144,7 +144,7 @@
             <!-- 고객 상세 정보가 여기에 표시됩니다. -->
         </div>
 
-        <!-- 프리셋 관리 화면 -->
+        <!-- 프린터 프리셋 관리 화면 -->
         <div id="preset-manager-container" class="page">
             <h2>프리셋 관리</h2>
             <form id="preset-form">
@@ -196,11 +196,20 @@
                     <input type="text" id="department-preset-name" placeholder="예: 경영지원팀" required>
                 </div>
                 <div class="form-group">
-                    <label for="department-preset-gateway">게이트웨이</label>
-                    <input type="text" id="department-preset-gateway" inputmode="numeric">
+                    <label for="department-preset-ip-prefix">IP 주소 접두사</label>
+                    <input type="text" id="department-preset-ip-prefix" placeholder="예: 192.168.0.">
                 </div>
                 </div>
                 <div class="form-row">
+ 
+                <div class="form-group">
+                    <label for="department-preset-gateway">게이트웨이</label>
+                    <input type="text" id="department-preset-gateway" inputmode="numeric">
+                </div>
+                <div class="form-group">
+                    <label for="department-preset-subnet">서브넷 마스크</label>
+                    <input type="text" id="department-preset-subnet" inputmode="numeric">
+                </div>
                 <div class="form-group">
                     <label for="department-preset-dns1">기본 DNS</label>
                     <input type="text" id="department-preset-dns1" inputmode="numeric">

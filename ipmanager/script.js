@@ -233,7 +233,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         departmentPresets.forEach(p => {
             const li = document.createElement('li');
-            li.innerHTML = `<span><strong>${p.name}</strong><br><small>GW: ${p.gateway || ''} / DNS: ${p.dns1 || ''}</small></span>
+                    li.innerHTML = `<span><strong>${p.name}</strong>
+                          <br><small>IP: ${p.ipPrefix || 'N/A'} | SN: ${p.subnet || 'N/A'}</small>
+                          <br><small>GW: ${p.gateway || 'N/A'} | DNS: ${p.dns1 || 'N/A'}</small>
+                          </span>
                           <div>
                             <button class="btn-secondary edit-department-preset-btn" data-id="${p.id}">수정</button>
                             <button class="btn-danger delete-department-preset-btn" data-id="${p.id}">삭제</button>
@@ -410,6 +413,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const triggerDepartmentAutofill = (departmentName) => {
         const preset = departmentPresets.find(p => p.name === departmentName);
         if (preset) {
+            document.getElementById('ip-address').value = preset.ipPrefix || '';   
+            document.getElementById('subnet-mask').value = preset.subnet || '';   
             document.getElementById('gateway').value = preset.gateway || '';
             document.getElementById('dns1').value = preset.dns1 || '';
             document.getElementById('dns2').value = preset.dns2 || '';
@@ -621,22 +626,26 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isNewDepartment) { // 2. 프리셋에 없는 새 부서 이름이라면,
 
                 // --- ▼ [추가] 현재 폼의 네트워크 값 읽어오기 ---
+                const currentIp = document.getElementById('ip-address').value;       
+                const currentSubnet = document.getElementById('subnet-mask').value; 
                 const currentGateway = document.getElementById('gateway').value;
                 const currentDns1 = document.getElementById('dns1').value;
                 const currentDns2 = document.getElementById('dns2').value;
 
-                // 게이트웨이 처리 (마지막 . 뒷부분 제거. 예: 192.168.0.254 -> 192.168.0.)
-                let processedGateway = '';
-                const lastDotIndex = currentGateway.lastIndexOf('.');
-                if (currentGateway && lastDotIndex !== -1) {
-                    processedGateway = currentGateway.substring(0, lastDotIndex + 1);
+                // IP 주소 처리 (마지막 . 뒷부분 제거. 예: 192.168.0.123 -> 192.168.0.)
+                let processedIpPrefix = '';
+                const lastDotIndex = currentIp.lastIndexOf('.');
+                if (currentIp && lastDotIndex !== -1) {
+                    processedIpPrefix = currentIp.substring(0, lastDotIndex + 1);
                 }
 
                 // 3. 새 프리셋 객체 생성
                 const newPreset = {
                     id: Date.now(),
                     name: departmentName,
-                    gateway: processedGateway, // 네트워크 정보는 비워둠 (나중에 수정 가능)
+                    ipPrefix: processedIpPrefix, // [수정] IP 접두사
+                    subnet: currentSubnet,       // [추가] 서브넷 마스크
+                    gateway: currentGateway,     // [수정] 전체 게이트웨이
                     dns1: currentDns1,
                     dns2: currentDns2
                 };
@@ -781,6 +790,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const presetId = departmentPresetIdInput.value;
         const presetData = {
             name: document.getElementById('department-preset-name').value.trim(),
+            ipPrefix: document.getElementById('department-preset-ip-prefix').value, 
+            subnet: document.getElementById('department-preset-subnet').value,  
             gateway: document.getElementById('department-preset-gateway').value,
             dns1: document.getElementById('department-preset-dns1').value,
             dns2: document.getElementById('department-preset-dns2').value,
@@ -811,9 +822,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (preset) {
                 departmentPresetIdInput.value = preset.id;
                 document.getElementById('department-preset-name').value = preset.name;
-                document.getElementById('department-preset-gateway').value = preset.gateway;
-                document.getElementById('department-preset-dns1').value = preset.dns1;
-                document.getElementById('department-preset-dns2').value = preset.dns2;
+                document.getElementById('department-preset-ip-prefix').value = preset.ipPrefix || ''; 
+                document.getElementById('department-preset-subnet').value = preset.subnet || '';   
+                document.getElementById('department-preset-gateway').value = preset.gateway || '';  
+                document.getElementById('department-preset-dns1').value = preset.dns1 || '';      
+                document.getElementById('department-preset-dns2').value = preset.dns2 || '';     
                 departmentPresetForm.querySelector('button[type="submit"]').textContent = '부서 프리셋 수정';
                 cancelDepartmentPresetEditBtn.style.display = 'inline-block';
             }
