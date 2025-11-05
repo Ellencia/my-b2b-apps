@@ -888,9 +888,4 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    window.addEventListener('resize', () => {
-        // Reset the view to a consistent state on resize
-        showPage('list');
-        renderCustomers(); // Re-render the list to apply any style changes
-    });
 });
