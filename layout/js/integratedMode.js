@@ -62,6 +62,17 @@ function populateLayoutDropdown() {
 
 function renderIntegratedLayout() {
     dom.layoutContainer.innerHTML = '';
+
+    // ▼▼▼ [추가] 3000x3000 스크롤 영역을 강제하는 Sizer 추가 ▼▼▼
+    const sizer = document.createElement('div');
+    sizer.style.width = '3000px';
+    sizer.style.height = '3000px';
+    sizer.style.position = 'static';
+    sizer.style.visibility = 'hidden';
+    sizer.style.pointerEvents = 'none';
+    dom.layoutContainer.appendChild(sizer);
+    // ▲▲▲ Sizer 추가 끝 ▲▲▲
+
     if (!state.activeLayoutId) return;
 
     const departmentsInLayout = Object.keys(state.layoutAssignments).filter(dept => state.layoutAssignments[dept] === state.activeLayoutId);
@@ -98,6 +109,12 @@ function renderIntegratedLayout() {
         // 아이템들의 평균 중앙 위치 계산
         const centerX = (minLeft + maxLeft) / 2;
         const centerY = (minTop + maxTop) / 2;
+
+        // ▼ [수정] 렌더링 다음 틱(tick)에서 스크롤 실행 (타이밍 문제 해결)
+        setTimeout(() => {
+            centerViewAt(centerX, centerY);
+        }, 0);
+
         centerViewAt(centerX, centerY);
     } else if (hasSavedData) {
         // "옛날 레이아웃" (아이템 없음): (0, 0)으로 스크롤

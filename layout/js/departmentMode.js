@@ -7,6 +7,17 @@ import { COORDINATE_OFFSET } from './utils.js';
 
 function renderDepartmentLayout(department) {
     dom.layoutContainer.innerHTML = '';
+
+    // ▼▼▼ [추가] 3000x3000 스크롤 영역을 강제하는 Sizer 추가 ▼▼▼
+    const sizer = document.createElement('div');
+    sizer.style.width = '1000px';
+    sizer.style.height = '1000px';
+    sizer.style.position = 'static'; // absolute가 아니므로 캔버스 크기를 정의함
+    sizer.style.visibility = 'hidden'; // 보이지 않게
+    sizer.style.pointerEvents = 'none'; // 클릭/터치 이벤트 무시
+    dom.layoutContainer.appendChild(sizer);
+    // ▲▲▲ Sizer 추가 끝 ▲▲▲
+
     const departmentCustomers = state.customers.filter(c => c.department === department);
     const savedPositions = loadLayoutData(`layout_${department}`);
     
@@ -40,6 +51,12 @@ function renderDepartmentLayout(department) {
         // 아이템들의 평균 중앙 위치 계산
         const centerX = (minLeft + maxLeft) / 2;
         const centerY = (minTop + maxTop) / 2;
+
+        // ▼ [수정] 렌더링 다음 틱(tick)에서 스크롤 실행 (타이밍 문제 해결)
+        setTimeout(() => {
+            centerViewAt(centerX, centerY);
+        }, 0);
+
         centerViewAt(centerX, centerY);
     } else if (hasSavedData) {
         // "옛날 부서" (아이템 없음): (0, 0)으로 스크롤
@@ -68,8 +85,8 @@ function createPcElement(customer, savedPositions) {
         pcElement.style.top = savedPositions[customer.id].top;
     } else {
         // ▼ [수정] (1000, 1000) 근처에 랜덤 배치
-        pcElement.style.left = `${Math.random() * 400 + (COORDINATE_OFFSET - 200)}px`;
-        pcElement.style.top = `${Math.random() * 400 + (COORDINATE_OFFSET - 200)}px`;
+        pcElement.style.left = `${Math.random() * 200}px`;
+        pcElement.style.top = `${Math.random() * 200}px`;
     }
     return pcElement;
 }
@@ -104,6 +121,4 @@ export function initDepartmentMode() {
 
     dom.departmentSelect.addEventListener('change', handleDepartmentChange);
     dom.saveLayoutBtn.addEventListener('click', saveDepartmentLayout);
-
-    centerViewOnLogicalOrigin(); // 뷰를 가상 원점 (1000, 1000)으로 중앙 정렬
 }
