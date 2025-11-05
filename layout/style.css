@@ -4,6 +4,7 @@ body {
     padding: 0;
     background-color: #f4f4f4;
     color: #333;
+    overscroll-behavior-y: contain; /* 모바일 당겨서 새로고침 방지 */
 }
 
 .container {
