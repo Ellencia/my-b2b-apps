@@ -255,12 +255,28 @@ function renderDepartmentAssignmentList() {
     dom.selectedLayoutNameEl.textContent = `'${selectedLayout.name}' 레이아웃에 부서 할당`;
 
     allDepartments.forEach(dept => {
-        const isChecked = state.layoutAssignments[dept] === state.selectedLayoutIdInManager;
+        const assignedLayoutId = state.layoutAssignments[dept];
+        const isAssignedToCurrent = assignedLayoutId === state.selectedLayoutIdInManager;
+        const isAssignedElsewhere = assignedLayoutId && !isAssignedToCurrent;
+
         const div = document.createElement('div');
         div.className = 'department-item';
+
+        let assignedLayoutName = '';
+        if (isAssignedElsewhere) {
+            const assignedLayout = state.layouts.find(l => l.id === assignedLayoutId);
+            if (assignedLayout) {
+                assignedLayoutName = `(${assignedLayout.name})`;
+            }
+            div.classList.add('assigned-elsewhere');
+        }
+
         div.innerHTML = `
-            <input type="checkbox" id="dept-assign-${dept}" value="${dept}" ${isChecked ? 'checked' : ''}>
+            <input type="checkbox" id="dept-assign-${dept}" value="${dept}" 
+                ${isAssignedToCurrent ? 'checked' : ''} 
+                ${isAssignedElsewhere ? 'disabled' : ''}>
             <label for="dept-assign-${dept}">${dept}</label>
+            ${isAssignedElsewhere ? `<span class="assigned-layout-name">${assignedLayoutName}</span>` : ''}
         `;
         dom.departmentAssignmentList.appendChild(div);
     });

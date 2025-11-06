@@ -310,6 +310,18 @@ main {
     margin-bottom: 5px;
 }
 
+.department-item.assigned-elsewhere label {
+    color: #888;
+    text-decoration: line-through;
+}
+
+.assigned-layout-name {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-left: 8px;
+}
+
+
 /* Align buttons to the right */
 #change-mode-btn-integrated {
     margin-left: auto;
