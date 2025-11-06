@@ -426,6 +426,11 @@ main {
     pointer-events: none; /* Title text should not interfere with dragging */
 }
 
+.image-capture-mode .rotate-btn {
+    display: none;
+}
+
+
 /* --- Rotation Button Styles --- */
 .rotate-btn {
     position: absolute;

@@ -57,9 +57,12 @@ function saveLayoutAsImage() {
     };
     // ▲▲▲ End of Bounding Box Calculation ▲▲▲
 
-    // 캡처 전 패닝/줌 스타일 임시 제거
+    // 캡처 전 패닝/줌 스타일 임시 제거 및 캡처 모드 활성화
     const originalTransform = dom.layoutContainer.style.transform;
     dom.layoutContainer.style.transform = '';
+    if (state.viewMode === 'integrated') {
+        elementsToCapture.forEach(el => el.classList.add('image-capture-mode'));
+    }
 
     html2canvas(dom.layoutContainer, captureOptions).then(canvas => {
         const image = canvas.toDataURL('image/png');
@@ -71,8 +74,11 @@ function saveLayoutAsImage() {
         console.error('Error generating image:', error);
         alert('이미지 생성 중 오류가 발생했습니다. 콘솔을 확인해주세요.');
     }).finally(() => {
-        // 캡처 후 스타일 복원 (오류 발생 시에도 복원 보장)
+        // 캡처 후 스타일 복원 및 캡처 모드 비활성화
         dom.layoutContainer.style.transform = originalTransform;
+        if (state.viewMode === 'integrated') {
+            elementsToCapture.forEach(el => el.classList.remove('image-capture-mode'));
+        }
     });
     dom.dropdownMenu.classList.remove('show');
 }
