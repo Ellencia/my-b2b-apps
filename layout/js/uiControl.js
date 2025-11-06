@@ -105,6 +105,9 @@ function dragEnd(e) {
 
 // ▼ [수정] dragStart에 드래그할 요소를 직접 전달
 export function makeDraggable(element, onDragEnd) {
+    // ▼ [추가] 모바일 드래그 충돌 방지를 위해 touch-action 스타일 적용
+    element.style.touchAction = 'none';
+
     const start = (e) => dragStart(e, element, onDragEnd);
     element.addEventListener('pointerdown', start, { capture: true });
 }
