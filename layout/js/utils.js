@@ -11,7 +11,15 @@ export const getClientCoords = (e) => {
 // localStorage에서 레이아웃 데이터를 불러오는 함수
 export const loadLayoutData = (key) => {
     const storedData = localStorage.getItem(getKey(key));
-    return storedData ? JSON.parse(storedData) : {};
+    if (!storedData) {
+        return { positions: {}, lastModified: 0 }; // Return default structure
+    }
+    const data = JSON.parse(storedData);
+    // For backward compatibility with old data format
+    if (data && !data.hasOwnProperty('positions')) {
+        return { positions: data, lastModified: 0 };
+    }
+    return data || { positions: {}, lastModified: 0 };
 };
 
 // localStorage에 레이아웃 데이터를 저장하는 함수

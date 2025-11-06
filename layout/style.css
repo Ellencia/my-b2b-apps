@@ -340,8 +340,8 @@ main {
     border-radius: 5px;
     cursor: grab;
     text-align: center;
-    width: 60px;
-    height: 40px;
+    width: 45px;
+    height: 45px;
     font-size: 0.8em;
     display: flex;
     flex-direction: column;
@@ -426,13 +426,44 @@ main {
     pointer-events: none; /* Title text should not interfere with dragging */
 }
 
+/* --- Rotation Button Styles --- */
+.rotate-btn {
+    position: absolute;
+    bottom: -15px;
+    width: 30px;
+    height: 30px;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    z-index: 25;
+    font-size: 0; /* Hide original emoji text */
+}
 
-/* --- ▼▼▼ Department Block Styles ▼▼▼ --- */
-.department-block {
-    position: absolute; /* Important for dragging */
-    background-color: rgba(255, 255, 255, 0.8);
-    border: 2px solid #6c757d;
-    border-radius: 8px;
-    padding: 30px 10px 10px 10px; /* Top padding for title */
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+.rotate-btn::before {
+    font-size: 1rem; 
+    line-height: 30px;
+    display: block;
+    width: 100%;
+    height: 100%;
+    transform: rotate(180deg);
+}
+
+.rotate-ccw::before {
+    content: '↪️';
+}
+
+.rotate-cw::before {
+    content: '↩️';
+}
+
+.rotate-btn:hover {
+    opacity: 0.7;
+}
+
+.rotate-ccw {
+    right: -15px;
+}
+
+.rotate-cw {
+    left: -15px;
 }

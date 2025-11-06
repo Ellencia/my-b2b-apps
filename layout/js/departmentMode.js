@@ -19,7 +19,7 @@ function renderDepartmentLayout(department) {
     // ▲▲▲ Sizer 추가 끝 ▲▲▲
 
     const departmentCustomers = state.customers.filter(c => c.department === department);
-    const savedPositions = loadLayoutData(`layout_${department}`);
+    const { positions: savedPositions, lastModified } = loadLayoutData(`layout_${department}`);
     
     const hasSavedData = Object.keys(savedPositions).length > 0;
 
@@ -92,13 +92,19 @@ function createPcElement(customer, savedPositions) {
 }
 
 function saveDepartmentLayout() {
-    const layoutData = {};
+    const positions = {};
     dom.layoutContainer.querySelectorAll('.pc-item').forEach(pcElement => {
-        layoutData[pcElement.dataset.id] = {
+        positions[pcElement.dataset.id] = {
             left: pcElement.style.left,
             top: pcElement.style.top
         };
     });
+
+    const layoutData = {
+        positions: positions,
+        lastModified: Date.now() // Add timestamp
+    };
+
     saveLayoutData(`layout_${state.currentDepartment}`, layoutData);
     alert('레이아웃이 저장되었습니다!');
 }
