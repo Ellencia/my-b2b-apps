@@ -332,7 +332,17 @@ main {
     color: #333;
 }
 
-.pc-
+.pc-item.pc-item-completed {
+    background-color: #52c41a; /* Green */
+    border: 1px solid #52c41a;
+    color: #fff;
+}
+
+.pc-item.pc-item-error {
+    background-color: #f5222d; /* Red */
+    border: 1px solid #f5222d;
+    color: #fff;
+}
 
 /* --- ▼▼▼ Department Block Styles ▼▼▼ --- */
 .department-block {
