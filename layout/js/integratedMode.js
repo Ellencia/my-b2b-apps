@@ -20,7 +20,6 @@ function addEventListeners() {
     dom.departmentAssignmentList.addEventListener('change', handleDepartmentAssignmentChange);
     dom.layoutManagementList.addEventListener('click', handleLayoutManagementListClick);
     dom.departmentFocusSelect.addEventListener('change', handleLayoutFocusChange);
-    dom.toggleDeptNamesBtn.addEventListener('click', toggleDepartmentNames);
     dom.saveLayoutBtnIntegrated.addEventListener('click', saveIntegratedLayout);
 }
 
@@ -230,11 +229,7 @@ function renderLayoutManagementList() {
 
         const nameSpan = document.createElement('span');
         nameSpan.textContent = layout.name;
-        nameSpan.addEventListener('click', () => {
-            updateState({ selectedLayoutIdInManager: layout.id });
-            renderLayoutManagementList();
-            renderDepartmentAssignmentList();
-        });
+        // The click listener is now handled by handleLayoutManagementListClick
 
         const buttonsDiv = document.createElement('div');
         buttonsDiv.innerHTML = `
@@ -299,13 +294,22 @@ function handleDepartmentAssignmentChange(e) {
 
 function handleLayoutManagementListClick(e) {
     const target = e.target;
-    const layoutId = parseInt(target.closest('li').dataset.id);
+    const li = target.closest('li');
+    if (!li) return;
+
+    const layoutId = parseInt(li.dataset.id);
     if (!layoutId) return;
 
+    // Handle button clicks
     if (target.classList.contains('rename-layout-btn')) {
         renameLayout(layoutId);
     } else if (target.classList.contains('delete-layout-btn')) {
         deleteLayout(layoutId);
+    } else {
+        // Otherwise, handle as a selection click
+        updateState({ selectedLayoutIdInManager: layoutId });
+        renderLayoutManagementList();
+        renderDepartmentAssignmentList();
     }
 }
 
@@ -349,10 +353,4 @@ function handleLayoutFocusChange(e) {
     updateState({ activeLayoutId: parseInt(e.target.value) });
     saveIntegratedData();
     renderIntegratedLayout();
-}
-
-// This function is no longer relevant as department names are titles of blocks
-function toggleDepartmentNames() {
-   // No longer needed, but let's not remove it to avoid breaking the button
-   alert('부서 이름은 각 블록의 제목으로 항상 표시됩니다.');
 }

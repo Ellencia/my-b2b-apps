@@ -22,7 +22,6 @@ export const dom = {
     // Integrated Mode
     manageLayoutsBtn: document.getElementById('manage-layouts-btn'),
     departmentFocusSelect: document.getElementById('department-focus-select'),
-    toggleDeptNamesBtn: document.getElementById('toggle-dept-names-btn'),
     saveLayoutBtnIntegrated: document.getElementById('save-layout-btn-integrated'),
 
     // Modal
